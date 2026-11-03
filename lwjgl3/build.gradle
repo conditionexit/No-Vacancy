@@ -25,7 +25,7 @@ eclipse.project.name = appName + '-lwjgl3'
 java.sourceCompatibility = 26
 java.targetCompatibility = 26
 if (JavaVersion.current().isJava9Compatible()) {
-        compileJava.options.release.set(26)
+        compileJava.options.release.set(21)
 }
 
 dependencies {
