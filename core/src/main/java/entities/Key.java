@@ -1,12 +1,13 @@
-package io.github.conditionexit.novacancy.model;
+package entities;
 
-public class Key {
+public class Key extends GameEntity {
 
     private final float x;
     private final float y;
     private boolean collected;
 
     public Key(float x, float y) {
+        super(x, y);
         this.x = x;
         this.y = y;
         this.collected = false;
