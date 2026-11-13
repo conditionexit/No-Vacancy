@@ -1,0 +1,50 @@
+{
+    "activeFile": "level1.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "file.lastUsedOpenFilter": "All Files (*)",
+    "fileStates": {
+        "animations.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "level1.tmx": {
+            "scale": 1,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 878,
+                "y": 767.5
+            }
+        },
+        "player.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "tileset.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        }
+    },
+    "last.imagePath": "/home/admin_test/Downloads/2dgame/No-Vacancy/assets",
+    "map.height": 40,
+    "map.lastUsedFormat": "tmx",
+    "map.width": 60,
+    "openFiles": [
+        "level1.tmx",
+        "tileset.tsx",
+        "player.tsx"
+    ],
+    "project": "untitled.tiled-project",
+    "recentFiles": [
+        "player.tsx",
+        "tileset.tsx",
+        "level1.tmx",
+        "animations.tsx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.tileSize": {
+        "height": 66,
+        "width": 32
+    }
+}
