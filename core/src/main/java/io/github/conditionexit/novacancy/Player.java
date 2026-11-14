@@ -1,4 +1,4 @@
-package io.github.conditionext.novacancy;
+package io.github.conditionexit.novacancy;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;

@@ -1,4 +1,4 @@
-package io.github.conditionext.novacancy;
+package io.github.conditionexit.novacancy;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
@@ -15,7 +15,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 public class Main extends ApplicationAdapter {
-    io.github.conditionext.novacancy.GameMap map;
+    GameMap map;
     OrthogonalTiledMapRenderer renderer;
     OrthographicCamera camera = new OrthographicCamera();
     Viewport viewport = new FitViewport(640, 500, camera);

@@ -1,4 +1,4 @@
-package io.github.conditionext.novacancy;
+package io.github.conditionexit.novacancy;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
