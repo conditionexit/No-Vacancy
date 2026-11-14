@@ -1,0 +1,23 @@
+{
+    "activeFile": "build/resources/main/maps/tileset.tsx",
+    "expandedProjectPaths": [
+        "build",
+        "build/resources/main/ui",
+        ".",
+        "build/resources/main/maps",
+        "build/resources"
+    ],
+    "fileStates": {
+        "build/resources/main/maps/tileset.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        }
+    },
+    "openFiles": [
+        "build/resources/main/maps/tileset.tsx"
+    ],
+    "project": "mygame.tiled-project",
+    "recentFiles": [
+        "build/resources/main/maps/tileset.tsx"
+    ]
+}
