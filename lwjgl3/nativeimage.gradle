@@ -4,7 +4,7 @@ project(":lwjgl3") {
 
   graalvmNative {
     binaries {
-      main(({
+      main {
         imageName = appName
         mainClass = application.mainClass
         requiredVersion = '21.0'
@@ -12,7 +12,7 @@ project(":lwjgl3") {
         jvmArgs.addAll("-Dfile.encoding=UTF8")
         sharedLibrary = false
         resources.autodetect()
-      } as String))
+      }
     }
   }
 
