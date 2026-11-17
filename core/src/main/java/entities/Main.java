@@ -58,6 +58,9 @@ public class Main extends ApplicationAdapter {
         batch = new SpriteBatch();
 
         maze = new Maze("level1.tmx");
+        if(!maze.isLoaded()){
+            return;
+        }
         player = new Player(maze);
 
         enemyTex = new Texture("enemy.png");
@@ -103,21 +106,28 @@ public class Main extends ApplicationAdapter {
      */
     @Override
     public void render() {
+        // Clear every frame first, so a failed map load produces a black window.
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        // create() returned before constructing player/enemies/HUD.
+        if (maze == null || !maze.isLoaded()) {
+            return;
+        }
+
         float dt = Gdx.graphics.getDeltaTime();
 
         // update
         player.update(dt);
+
+        // update
         for (Enemy e : enemies) {
             e.update(dt, player.x, player.y);
             if (e.distanceTo(player.x, player.y) < 24f) player.takeDamage();
         }
         if (player.isDead()) player.reset();
+
         updateCamera();
-
-
-        // draw
-        Gdx.gl.glClearColor(0, 0, 0, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         maze.renderGround(camera);                                // floor
 
@@ -158,11 +168,12 @@ public class Main extends ApplicationAdapter {
      */
     @Override
     public void dispose() {
-        maze.dispose();
-        player.dispose();
-        batch.dispose();
-        enemyTex.dispose();
-        hud.dispose();
+        // A failed map load returns early from create(), so some fields can be null.
+        if (maze != null) maze.dispose();
+        if (player != null) player.dispose();
+        if (batch != null) batch.dispose();
+        if (enemyTex != null) enemyTex.dispose();
+        if (hud != null) hud.dispose();
     }
 
 

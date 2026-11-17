@@ -65,8 +65,8 @@ public class Player extends GameObject {
         // movement (separate axes = slide along walls)
         float len = (float) Math.sqrt(dx * dx + dy * dy);
         if (len > 0) { dx = dx / len * SPEED * dt; dy = dy / len * SPEED * dt; }
-        if (free(x + dx, y)) x += dx;
-        if (free(x, y + dy)) y += dy;
+//        if (free(x + dx, y)) x += dx;
+//        if (free(x, y + dy)) y += dy;
     }
 
     /**
@@ -91,5 +91,5 @@ public class Player extends GameObject {
     }
 
     // true if the hitbox at (px, py) touches no wall tile
-    r
+
 }

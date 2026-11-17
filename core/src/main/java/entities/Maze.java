@@ -1,5 +1,6 @@
 package entities;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
@@ -31,14 +32,25 @@ import com.badlogic.gdx.utils.Array;
  * {@link #dispose()} once the level is no longer needed.</p>
  *
  * @author Fuad Jafarli
+ * @implNote Tweaked by Mahammad
  * @see Player
  * @see Enemy
  */
 public class Maze {
-    private final TiledMap map;
-    private final OrthogonalTiledMapRenderer renderer;
-    private final TiledMapTileLayer walls, decor;
-    private final int[] groundLayers;
+    /**
+     * True only when the TMX map and its required layers loaded successfully.
+     *
+     * <p>Callers must check this before asking the maze to render, collide,
+     * or provide map dimensions.</p>
+     */
+
+    private TiledMap map;
+    private OrthogonalTiledMapRenderer renderer;
+    private TiledMapTileLayer walls, decor;
+    private int[] groundLayers;
+
+    // removed the final keyword from variables because they stay null when TMX map fails to load
+    private boolean loaded;
 
     /** Raw player-spawn object position, before a sprite-specific offset. */
     public final Vector2 playerSpawn = new Vector2();
@@ -54,27 +66,61 @@ public class Maze {
      * {@code decor}, and {@code objects}, plus any tilesets requested through
      * {@link #animation(String, int)}.</p>
      *
+     * <p>If the map cannot be loaded—for example, because the file is missing
+     * or malformed—the error is written to the libGDX log and
+     * {@link #isLoaded()} returns {@code false}. The game can then remain open
+     * without trying to use an invalid map.</p>
+     *
      * @param tmxFile internal asset path to the TMX map
      */
     public Maze(String tmxFile) {
         TmxMapLoader.Parameters p = new TmxMapLoader.Parameters();
         p.textureMinFilter = Texture.TextureFilter.Nearest;
         p.textureMagFilter = Texture.TextureFilter.Nearest;
-        map = new TmxMapLoader().load(tmxFile, p);
 
-        renderer = new OrthogonalTiledMapRenderer(map);
-        walls = (TiledMapTileLayer) map.getLayers().get("walls");
-        decor = (TiledMapTileLayer) map.getLayers().get("decor");
-        groundLayers = new int[]{ map.getLayers().getIndex("ground") };
+        try {
+            map = new TmxMapLoader().load(tmxFile, p);
 
-        for (MapObject o : map.getLayers().get("objects").getObjects()) {
-            float ox = o.getProperties().get("x", Float.class);
-            float oy = o.getProperties().get("y", Float.class);
-            String type = o.getProperties().get("type", String.class);
+            renderer = new OrthogonalTiledMapRenderer(map);
+            walls = (TiledMapTileLayer) map.getLayers().get("walls");
+            decor = (TiledMapTileLayer) map.getLayers().get("decor");
+            groundLayers = new int[]{map.getLayers().getIndex("ground")};
 
-            if ("enemy".equals(type)) enemySpawns.add(new Vector2(ox, oy));
-            if ("player_spawn".equals(o.getName())) playerSpawn.set(ox, oy);
+            for (MapObject o : map.getLayers().get("objects").getObjects()) {
+                float ox = o.getProperties().get("x", Float.class);
+                float oy = o.getProperties().get("y", Float.class);
+                String type = o.getProperties().get("type", String.class);
+
+                if ("enemy".equals(type)) {
+                    enemySpawns.add(new Vector2(ox, oy));
+                }
+
+                if ("player_spawn".equals(o.getName())) {
+                    playerSpawn.set(ox, oy);
+                }
+            }
+
+            loaded = true;
+
+        }catch(RuntimeException e) {
+            // Mark the maze unusable; Main.render() will leave the window black.
+            loaded = false;
+
+            // Print the actual missing-file or malformed-map error to the console.
+            Gdx.app.error("Maze", "Could not load map: " + tmxFile, e);
         }
+
+
+    }
+
+    /**
+     * Reports whether this maze loaded successfully.
+     *
+     * @return {@code true} when the TMX map and its required data are ready
+     *         to use; otherwise {@code false}
+     */
+    public boolean isLoaded() {
+        return loaded;
     }
 
     // ---------- size ----------
@@ -230,9 +276,10 @@ public class Maze {
 
     /**
      * Releases the TMX map and the map renderer owned by this maze.
+     * Releases map resources when they were successfully created.
      */
     public void dispose() {
-        map.dispose();
-        renderer.dispose();
+        if(map != null) map.dispose();
+        if(renderer != null) renderer.dispose();
     }
 }
