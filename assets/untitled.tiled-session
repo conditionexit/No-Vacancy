@@ -1,5 +1,5 @@
 {
-    "activeFile": "tileset.tsx",
+    "activeFile": "level1.tmx",
     "expandedProjectPaths": [
         "."
     ],
@@ -10,11 +10,11 @@
             "scaleInEditor": 1
         },
         "level1.tmx": {
-            "scale": 1,
-            "selectedLayer": 3,
+            "scale": 0.777,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 1005,
-                "y": 767.5
+                "x": 954.3114543114542,
+                "y": 591.3770913770913
             }
         },
         "player.tsx": {
@@ -37,9 +37,9 @@
     ],
     "project": "untitled.tiled-project",
     "recentFiles": [
-        "level1.tmx",
         "player.tsx",
         "tileset.tsx",
+        "level1.tmx",
         "animations.tsx"
     ],
     "tileset.lastUsedFormat": "tsx",
