@@ -10,7 +10,7 @@ public class Lwjgl3Launcher {
     }
 
     private static Lwjgl3Application createApplication() {
-        return new Lwjgl3Application(new entities.Main(), getDefaultConfiguration());
+        return new Lwjgl3Application(new io.github.conditionexit.novacancy.Main(), getDefaultConfiguration());
     }
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {
