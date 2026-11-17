@@ -58,6 +58,9 @@ public class Main extends ApplicationAdapter {
         batch = new SpriteBatch();
 
         maze = new Maze("level1.tmx");
+        if(!maze.isLoaded()){
+            return;
+        }
         player = new Player(maze);
 
         enemyTex = new Texture("enemy.png");
@@ -116,8 +119,13 @@ public class Main extends ApplicationAdapter {
 
 
         // draw
+        // Clear every frame first, so a failed map load produces a black window.
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        if (maze == null || !maze.isLoaded()) {
+            return;
+        }
 
         maze.renderGround(camera);                                // floor
 
@@ -158,11 +166,12 @@ public class Main extends ApplicationAdapter {
      */
     @Override
     public void dispose() {
-        maze.dispose();
-        player.dispose();
-        batch.dispose();
-        enemyTex.dispose();
-        hud.dispose();
+        // A failed map load returns early from create(), so some fields can be null.
+        if (maze != null) maze.dispose();
+        if (player != null) player.dispose();
+        if (batch != null) batch.dispose();
+        if (enemyTex != null) enemyTex.dispose();
+        if (hud != null) hud.dispose();
     }
 
 
