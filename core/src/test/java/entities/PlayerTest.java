@@ -1,6 +1,7 @@
 
 package entities;
 
+import Mahammad.Player;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -9,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * Verifies player health initialization, damage handling,
  * health limits, and alive/dead state.
+ * @author Mahammad Jafarli
  */
 class PlayerTest {
 

@@ -1,4 +1,4 @@
-package io.github.conditionext.novacancy;
+package entities;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
