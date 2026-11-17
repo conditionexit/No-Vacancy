@@ -1,5 +1,6 @@
 package entities;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
@@ -67,7 +68,7 @@ public class Maze {
      *
      * <p>If the map cannot be loaded—for example, because the file is missing
      * or malformed—the error is written to the libGDX log and
-     * {@link #isLoaded} returns {@code false}. The game can then remain open
+     * {@link #isLoaded()} returns {@code false}. The game can then remain open
      * without trying to use an invalid map.</p>
      *
      * @param tmxFile internal asset path to the TMX map
@@ -102,22 +103,14 @@ public class Maze {
             loaded = true;
 
         }catch(RuntimeException e) {
+            // Mark the maze unusable; Main.render() will leave the window black.
             loaded = false;
+
+            // Print the actual missing-file or malformed-map error to the console.
+            Gdx.app.error("Maze", "Could not load map: " + tmxFile, e);
         }
 
-//        renderer = new OrthogonalTiledMapRenderer(map);
-//        walls = (TiledMapTileLayer) map.getLayers().get("walls");
-//        decor = (TiledMapTileLayer) map.getLayers().get("decor");
-//        groundLayers = new int[]{ map.getLayers().getIndex("ground") };
-//
-//        for (MapObject o : map.getLayers().get("objects").getObjects()) {
-//            float ox = o.getProperties().get("x", Float.class);
-//            float oy = o.getProperties().get("y", Float.class);
-//            String type = o.getProperties().get("type", String.class);
-//
-//            if ("enemy".equals(type)) enemySpawns.add(new Vector2(ox, oy));
-//            if ("player_spawn".equals(o.getName())) playerSpawn.set(ox, oy);
-//        }
+
     }
 
     /**

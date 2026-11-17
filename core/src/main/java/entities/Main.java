@@ -106,26 +106,28 @@ public class Main extends ApplicationAdapter {
      */
     @Override
     public void render() {
+        // Clear every frame first, so a failed map load produces a black window.
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        // create() returned before constructing player/enemies/HUD.
+        if (maze == null || !maze.isLoaded()) {
+            return;
+        }
+
         float dt = Gdx.graphics.getDeltaTime();
 
         // update
         player.update(dt);
+
+        // update
         for (Enemy e : enemies) {
             e.update(dt, player.x, player.y);
             if (e.distanceTo(player.x, player.y) < 24f) player.takeDamage();
         }
         if (player.isDead()) player.reset();
+
         updateCamera();
-
-
-        // draw
-        // Clear every frame first, so a failed map load produces a black window.
-        Gdx.gl.glClearColor(0, 0, 0, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-        if (maze == null || !maze.isLoaded()) {
-            return;
-        }
 
         maze.renderGround(camera);                                // floor
 
