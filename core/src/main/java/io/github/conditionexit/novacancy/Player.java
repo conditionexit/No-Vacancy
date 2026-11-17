@@ -7,6 +7,13 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
 
+/**
+ * The player-controlled character. Reads WASD input, moves with wall
+ * collision (sliding along walls), and plays a walking animation for each
+ * of the four facing directions.
+ *
+ * @author Fuad
+ */
 public class Player extends GameObject {
     static final float SPEED = 250f;
     static final float W = 32f, H = 66f;                  // sprite size
@@ -18,6 +25,13 @@ public class Player extends GameObject {
     int dir = 0;
     boolean moving;
 
+    /**
+     * Creates the player and loads its four walking animations from the map's tileset.
+     *
+     * @param map the map used for wall collision and animation loading
+     * @param x   starting world x of the sprite's bottom-left corner
+     * @param y   starting world y of the sprite's bottom-left corner
+     */
     public Player(GameMap map, float x, float y) {
         super(x, y, W, H);
         this.map = map;
@@ -27,6 +41,12 @@ public class Player extends GameObject {
         walk[3] = map.tiledAnim("player", 15);   // up
     }
 
+    /**
+     * Reads input, updates the facing direction and animation time, and moves
+     * the player. Each axis is tested separately so the player slides along walls.
+     *
+     * @param dt seconds since the previous frame
+     */
     @Override
     public void update(float dt) {
         // input
@@ -49,20 +69,27 @@ public class Player extends GameObject {
         if (free(x, y + dy)) y += dy;
     }
 
+    /**
+     * Draws the current animation frame for the facing direction.
+     *
+     * @param batch the batch to draw with; must already be begun
+     */
     @Override
     public void draw(SpriteBatch batch) {
         TextureRegion frame = walk[dir].getKeyFrame(stateTime);
         batch.draw(frame, x, y, W, H);
     }
 
+    /**
+     * Returns the player's hitbox, which is narrower than the sprite.
+     *
+     * @return a new rectangle covering the hitbox
+     */
     @Override
     public Rectangle getBounds() {
         return new Rectangle(x + HB_X, y, HB_W, HB_H);
     }
 
     // true if the hitbox at (px, py) touches no wall tile
-    boolean free(float px, float py) {
-        return !map.solid(px + HB_X, py) && !map.solid(px + HB_X + HB_W, py)
-            && !map.solid(px + HB_X, py + HB_H) && !map.solid(px + HB_X + HB_W, py + HB_H);
-    }
+    r
 }
