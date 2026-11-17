@@ -1,75 +1,95 @@
-package io.github.conditionexit.novacancy;
+package io.github.conditionext.novacancy;
 
 import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
 
-/*
-
-Main entry point for the No-Vacancy game.
- *
- * <p>This class manages the basic lifecycle of the game using libGDX.
- * It initializes the resources needed for rendering, draws the game
- * content every frame, and releases resources when the game closes.</p>
- *
- * <p>Currently, this class displays a sample image.
- * As development progresses, it will be integrated with the
- * game's actual screens and gameplay systems.</p>
- *
- * @author Mahammad
- * @author Fuad
- * @author Islam
- * @author Zarifa
- * @author Yusif
- * @version 0.1
- * @since 0.1
- * @see ApplicationAdapter
-
- */
-
-/** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
-    private SpriteBatch batch;
-    private Texture image;
+    OrthographicCamera camera = new OrthographicCamera();
+    Viewport viewport = new FitViewport(640, 500, camera);
+    SpriteBatch batch;
 
-    /**
-     * Initializes the game when the application starts.
-     *
-     * <p>Creates the SpriteBatch used for rendering and loads
-     * the temporary image from the game's assets.</p>
-     */
+    Maze maze;
+    Player player;
+    Array<Enemy> enemies = new Array<>();
+    Texture enemyTex;
 
     @Override
     public void create() {
         batch = new SpriteBatch();
-        image = new Texture("libgdx.png");
-    }
 
-    /**
-     * Renders the game content once per frame.
-     *
-     * <p>Clears the screen, starts the rendering batch,
-     * draws the temporary image, and finishes the batch.</p>
-     */
+        maze = new Maze("level1.tmx");
+        player = new Player(maze);
+
+        enemyTex = new Texture("enemy.png");
+        enemyTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        for (Vector2 s : maze.enemySpawns) {
+            enemies.add(new Enemy(s.x - Enemy.W / 2, s.y - Enemy.H / 2, enemyTex));
+        }
+
+        hud = new Hud(640, 500);
+    }
+    Hud  hud;
+    @Override
+    public void resize(int w, int h) { viewport.update(w, h); }
 
     @Override
     public void render() {
-        ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
+        float dt = Gdx.graphics.getDeltaTime();
+
+        // update
+        player.update(dt);
+        for (Enemy e : enemies) {
+            e.update(dt, player.x, player.y);
+            if (e.distanceTo(player.x, player.y) < 24f) player.takeDamage();
+        }
+        if (player.isDead()) player.reset();
+        updateCamera();
+
+
+        // draw
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        maze.renderGround(camera);                                // floor
+
+        batch.setProjectionMatrix(camera.combined);
         batch.begin();
-        batch.draw(image, 140, 210);
+        int feetRow = player.feetRow();
+        for (int row = maze.rows() - 1; row >= 0; row--) {        // top to bottom
+            for (Enemy e : enemies) {
+                if (e.row(maze.tileHeight()) == row) e.draw(batch);
+            }
+            if (row == feetRow) player.draw(batch);               // player between rows
+            maze.drawRow(batch, row);
+        }
         batch.end();
+        hud.draw(batch, player.getLives(), Player.MAX_LIVES);
     }
 
-    /**
-     * Releases resources when the application closes.
-     *
-     * <p>Disposing of libGDX resources prevents native memory leaks.</p>
-     */
+    private void updateCamera() {
+        camera.position.set(
+            MathUtils.clamp(player.x + Player.W / 2, camera.viewportWidth / 2, maze.pixelWidth() - camera.viewportWidth / 2),
+            MathUtils.clamp(player.y + Player.H / 2, camera.viewportHeight / 2, maze.pixelHeight() - camera.viewportHeight / 2), 0);
+        camera.update();
+    }
 
     @Override
     public void dispose() {
+        maze.dispose();
+        player.dispose();
         batch.dispose();
-        image.dispose();
+        enemyTex.dispose();
+        hud.dispose();
     }
+
+
 }
