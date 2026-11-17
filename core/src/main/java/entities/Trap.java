@@ -1,13 +1,12 @@
 package entities;
 
-public class Trap extends GameEntity {
+public class Trap {
 
     private final float x;
     private final float y;
     private final int damage;
 
     public Trap(float x, float y, int damage) {
-        super(x, y);
         if (damage <= 0) {
             throw new IllegalArgumentException("damage must be greater than 0");
         }

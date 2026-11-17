@@ -1,13 +1,12 @@
 package entities;
 
-public class Key extends GameEntity {
+public class Key {
 
     private final float x;
     private final float y;
     private boolean collected;
 
     public Key(float x, float y) {
-        super(x, y);
         this.x = x;
         this.y = y;
         this.collected = false;
