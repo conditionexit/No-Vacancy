@@ -153,7 +153,6 @@ public class Main extends ApplicationAdapter {
                 trap.update(dt, player.x + Player.HB_X, player.y + Player.HB_Y,
                     Player.HB_W, Player.HB_H, trapDamageReceiver);
             }
-            if (player.isDead()) restartLevel();
             if (key != null && !key.isCollected()) {
                 float dx = player.x + Player.W / 2 - key.getX();
                 float dy = player.y + Player.H / 2 - key.getY();
@@ -161,6 +160,7 @@ public class Main extends ApplicationAdapter {
                     key.collect();
                 }
             }
+            if (player.isDead()) restartLevel();
         }
         updateCamera();
 
