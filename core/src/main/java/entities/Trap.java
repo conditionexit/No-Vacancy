@@ -7,6 +7,8 @@ import java.util.function.IntPredicate;
 public final class Trap {
     public static final int DEFAULT_DAMAGE = 10;
     public static final float DEFAULT_COOLDOWN = 1f;
+    private static final int MAX_HITS_PER_UPDATE = 8;
+    private long resetGeneration;
 
     private final float x, y, width, height;
     private final int damage;
@@ -37,8 +39,12 @@ public final class Trap {
 
     /** Tests actual hitbox intersection; merely touching edges does not count. */
     public boolean overlaps(float px, float py, float pw, float ph) {
-        return pw > 0 && ph > 0 && px < x + width && px + pw > x
-            && py < y + height && py + ph > y;
+        double offsetX = (double) px - x;
+        double offsetY = (double) py - y;
+
+        return pw > 0 && ph > 0
+            && offsetX < width && offsetX > -pw
+            && offsetY < height && offsetY > -ph;
     }
 
     /**
@@ -54,27 +60,48 @@ public final class Trap {
             throw new IllegalArgumentException("delta time must be finite and non-negative");
         }
         Objects.requireNonNull(receiveDamage, "receiveDamage");
-        boolean overlap = overlaps(px, py, pw, ph);
+
         remaining -= dt;
-        if (!overlap) {
+        if (!overlaps(px, py, pw, ph)) {
             remaining = Math.max(0, remaining);
             touching = false;
             return;
         }
-        // A new contact starts now, not at the beginning of the elapsed frame.
-        if (!touching) remaining = Math.max(0, remaining);
+
+        if (!touching) {
+            remaining = Math.max(0, remaining);
+        }
         touching = true;
-        while (remaining <= 0.000001) {
-            if (!receiveDamage.test(damage)) {
-                remaining = Math.max(0, remaining);
+
+        for (int hits = 0; hits < MAX_HITS_PER_UPDATE && remaining <= 0; hits++) {
+            long generationBeforeHit = resetGeneration;
+            boolean accepted = receiveDamage.test(damage);
+
+            if (resetGeneration != generationBeforeHit) {
                 return;
             }
+
+            if (!accepted) {
+                remaining = 0;
+                return;
+            }
+
             remaining += cooldown;
+        }
+
+        if (remaining <= 0) {
+            // Drop excess overdue hits and start a fresh cooldown.
+            remaining = cooldown;
         }
     }
 
+
     /** Restores the initial, immediately ready state on level restart. */
-    public void reset() { remaining = 0; touching = false; }
+    public void reset() {
+        resetGeneration++;
+        remaining = 0;
+        touching = false;
+    }
 
     public float getX() { return x; }
     public float getY() { return y; }
