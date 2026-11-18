@@ -2,15 +2,19 @@ package entities;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+
+import java.util.function.IntPredicate;
 
 /**
  * libGDX application adapter that coordinates the maze-escape game loop.
@@ -46,6 +50,10 @@ public class Main extends ApplicationAdapter {
     Texture enemyTex;
     Key key;
     Texture keyTexture;
+    private ShapeRenderer trapRenderer;
+    private IntPredicate trapDamageReceiver;
+    private boolean paused;
+    private boolean applicationPaused;
 
     /**
      * Initializes game-owned resources after libGDX creates the application.
@@ -65,6 +73,8 @@ public class Main extends ApplicationAdapter {
             return;
         }
         player = new Player(maze);
+        trapDamageReceiver = amount -> player.takeTrapHit();
+        trapRenderer = new ShapeRenderer();
 
         if (maze.keySpawns.size > 0) {
             Vector2 spawn = maze.keySpawns.first();
@@ -142,12 +152,36 @@ public class Main extends ApplicationAdapter {
         for (Enemy e : enemies) {
             e.update(dt, player.x, player.y);
             if (e.distanceTo(player.x, player.y) < 24f) player.takeDamage();
+        if (Gdx.input.isKeyJustPressed(Input.Keys.P)) {
+            paused = !paused;
+            if (paused) player.stopFootsteps();
         }
-        if (player.isDead()) player.reset();
-
+        if (!paused && !applicationPaused) {
+            if (Gdx.input.isKeyJustPressed(Input.Keys.R)) restartLevel();
+            player.update(dt);
+            for (Enemy e : enemies) {
+                e.update(dt, player.x, player.y);
+                if (e.distanceTo(player.x, player.y) < 24f) player.takeDamage();
+            }
+            for (Trap trap : maze.traps) {
+                trap.update(dt, player.x + Player.HB_X, player.y + Player.HB_Y,
+                    Player.HB_W, Player.HB_H, trapDamageReceiver);
+            }
+            if (player.isDead()) restartLevel();
+        }
         updateCamera();
 
         maze.renderGround(camera);                                // floor
+
+        if (!maze.traps.isEmpty()) {
+            trapRenderer.setProjectionMatrix(camera.combined);
+            trapRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            trapRenderer.setColor(0.85f, 0.15f, 0.1f, 1f);
+            for (Trap trap : maze.traps) {
+                trapRenderer.rect(trap.getX(), trap.getY(), trap.getWidth(), trap.getHeight());
+            }
+            trapRenderer.end();
+        }
 
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
@@ -165,6 +199,22 @@ public class Main extends ApplicationAdapter {
         }
         batch.end();
         hud.draw(batch, player.getLives(), Player.MAX_LIVES, key != null && key.isCollected());
+    }
+
+    private void restartLevel() {
+        player.reset();
+        for (Trap trap : maze.traps) trap.reset();
+    }
+
+    @Override
+    public void pause() {
+        applicationPaused = true;
+        if (player != null) player.stopFootsteps();
+    }
+
+    @Override
+    public void resume() {
+        applicationPaused = false;
     }
 
     /**
@@ -197,6 +247,7 @@ public class Main extends ApplicationAdapter {
         if (enemyTex != null) enemyTex.dispose();
         if (keyTexture != null) keyTexture.dispose();
         if (hud != null) hud.dispose();
+        if (trapRenderer != null) trapRenderer.dispose();
     }
 
 

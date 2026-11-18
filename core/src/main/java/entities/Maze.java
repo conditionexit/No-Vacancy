@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.maps.MapObject;
+import com.badlogic.gdx.maps.objects.RectangleMapObject;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
@@ -14,6 +15,7 @@ import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.maps.tiled.tiles.AnimatedTiledMapTile;
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 
@@ -58,6 +60,7 @@ public class Maze {
     public final Vector2 playerSpawn = new Vector2();
     public final Array<Vector2> enemySpawns = new Array<>();
     public final Array<Vector2> keySpawns = new Array<>();
+    final Array<Trap> traps = new Array<>();
 
     /**
      * Loads a TMX level and extracts its rendering layers and spawn objects.
@@ -93,6 +96,15 @@ public class Maze {
                 float ox = o.getProperties().get("x", Float.class);
                 float oy = o.getProperties().get("y", Float.class);
                 String type = o.getProperties().get("type", String.class);
+
+                if ("trap".equals(type)) {
+                    if (!(o instanceof RectangleMapObject trapObject)) {
+                        throw new IllegalArgumentException("Trap objects must be rectangles: " + o.getName());
+                    }
+                    Rectangle bounds = trapObject.getRectangle();
+                    traps.add(new Trap(bounds.x, bounds.y, bounds.width, bounds.height,
+                        Trap.DEFAULT_DAMAGE, Trap.DEFAULT_COOLDOWN));
+                }
 
                 if ("enemy".equals(type)) {
                     enemySpawns.add(new Vector2(ox, oy));
