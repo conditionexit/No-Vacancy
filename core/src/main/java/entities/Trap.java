@@ -1,29 +1,112 @@
 package entities;
 
-public class Trap {
+import java.util.Objects;
+import java.util.function.IntPredicate;
 
-    private final float x;
-    private final float y;
+/** A stationary rectangular hazard, independent of hearts, HP, input and rendering. */
+public final class Trap {
+    public static final int DEFAULT_DAMAGE = 10;
+    public static final float DEFAULT_COOLDOWN = 1f;
+    private static final int MAX_HITS_PER_UPDATE = 8;
+    private long resetGeneration;
+
+    private final float x, y, width, height;
     private final int damage;
+    private final float cooldown;
+    private double remaining;
+    private boolean touching;
 
+    /** Preserves the original constructor; its collision size defaults to one 32-pixel tile. */
     public Trap(float x, float y, int damage) {
-        if (damage <= 0) {
-            throw new IllegalArgumentException("damage must be greater than 0");
+        this(x, y, 32f, 32f, damage, DEFAULT_COOLDOWN);
+    }
+
+    /** Creates a map-positioned trap; cooldown is measured in gameplay seconds. */
+    public Trap(float x, float y, float width, float height, int damage, float cooldown) {
+        if (!Float.isFinite(x) || !Float.isFinite(y)
+            || !Float.isFinite(width) || width <= 0
+            || !Float.isFinite(height) || height <= 0
+            || damage <= 0 || !Float.isFinite(cooldown) || cooldown <= 0) {
+            throw new IllegalArgumentException("Trap needs finite coordinates, positive size, damage and cooldown");
         }
         this.x = x;
         this.y = y;
+        this.width = width;
+        this.height = height;
         this.damage = damage;
+        this.cooldown = cooldown;
     }
 
-    public float getX() {
-        return x;
+    /** Tests actual hitbox intersection; merely touching edges does not count. */
+    public boolean overlaps(float px, float py, float pw, float ph) {
+        double offsetX = (double) px - x;
+        double offsetY = (double) py - y;
+
+        return pw > 0 && ph > 0
+            && offsetX < width && offsetX > -pw
+            && offsetY < height && offsetY > -ph;
     }
 
-    public float getY() {
-        return y;
+    /**
+     * Advances only gameplay time and delivers due hits while overlapping.
+     * The receiver handles health and returns false when it cannot accept a hit
+     * (for example, after death). Call this only during active, unpaused play.
+     * Leaving stops damage but does not bypass an outstanding cooldown.
+     * Long continuous-contact frames retain elapsed cooldown intervals.
+     */
+    public void update(float dt, float px, float py, float pw, float ph,
+                       IntPredicate receiveDamage) {
+        if (!Float.isFinite(dt) || dt < 0) {
+            throw new IllegalArgumentException("delta time must be finite and non-negative");
+        }
+        Objects.requireNonNull(receiveDamage, "receiveDamage");
+
+        remaining -= dt;
+        if (!overlaps(px, py, pw, ph)) {
+            remaining = Math.max(0, remaining);
+            touching = false;
+            return;
+        }
+
+        if (!touching) {
+            remaining = Math.max(0, remaining);
+        }
+        touching = true;
+
+        for (int hits = 0; hits < MAX_HITS_PER_UPDATE && remaining <= 0; hits++) {
+            long generationBeforeHit = resetGeneration;
+            boolean accepted = receiveDamage.test(damage);
+
+            if (resetGeneration != generationBeforeHit) {
+                return;
+            }
+
+            if (!accepted) {
+                remaining = 0;
+                return;
+            }
+
+            remaining += cooldown;
+        }
+
+        if (remaining <= 0) {
+            // Drop excess overdue hits and start a fresh cooldown.
+            remaining = cooldown;
+        }
     }
 
-    public int getDamage() {
-        return damage;
+
+    /** Restores the initial, immediately ready state on level restart. */
+    public void reset() {
+        resetGeneration++;
+        remaining = 0;
+        touching = false;
     }
+
+    public float getX() { return x; }
+    public float getY() { return y; }
+    public float getWidth() { return width; }
+    public float getHeight() { return height; }
+    public int getDamage() { return damage; }
+    public float getCooldown() { return cooldown; }
 }
