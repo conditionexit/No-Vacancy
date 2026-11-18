@@ -30,6 +30,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
  * @author Fuad Jafarli
  * @implNote Originally developed by Fuad Jafarli; subsequently modified by
  *           Mahammad and Islam.
+ * @implNote Key collection and HUD feedback added by Yusif.
  * @see Maze
  * @see Player
  * @see Enemy
@@ -43,6 +44,8 @@ public class Main extends ApplicationAdapter {
     Player player;
     Array<Enemy> enemies = new Array<>();
     Texture enemyTex;
+    Key key;
+    Texture keyTexture;
 
     /**
      * Initializes game-owned resources after libGDX creates the application.
@@ -62,6 +65,13 @@ public class Main extends ApplicationAdapter {
             return;
         }
         player = new Player(maze);
+
+        if (maze.keySpawns.size > 0) {
+            Vector2 spawn = maze.keySpawns.first();
+            key = new Key(spawn.x, spawn.y);
+            keyTexture = new Texture("key.png");
+            keyTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        }
 
         enemyTex = new Texture("enemy.png");
         enemyTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
@@ -120,6 +130,14 @@ public class Main extends ApplicationAdapter {
         // update
         player.update(dt);
 
+        if (key != null && !key.isCollected()) {
+            float dx = player.x + Player.W / 2 - key.getX();
+            float dy = player.y + Player.H / 2 - key.getY();
+            if (dx * dx + dy * dy < 24f * 24f) {
+                key.collect();
+            }
+        }
+
         // update
         for (Enemy e : enemies) {
             e.update(dt, player.x, player.y);
@@ -135,6 +153,10 @@ public class Main extends ApplicationAdapter {
         batch.begin();
         int feetRow = player.feetRow();
         for (int row = maze.rows() - 1; row >= 0; row--) {        // top to bottom
+            if (key != null && !key.isCollected()
+                && (int) (key.getY() / maze.tileHeight()) == row) {
+                batch.draw(keyTexture, key.getX() - 12, key.getY() - 12, 24, 24);
+            }
             for (Enemy e : enemies) {
                 if (e.row(maze.tileHeight()) == row) e.draw(batch);
             }
@@ -142,7 +164,7 @@ public class Main extends ApplicationAdapter {
             maze.drawRow(batch, row);
         }
         batch.end();
-        hud.draw(batch, player.getLives(), Player.MAX_LIVES);
+        hud.draw(batch, player.getLives(), Player.MAX_LIVES, key != null && key.isCollected());
     }
 
     /**
@@ -173,6 +195,7 @@ public class Main extends ApplicationAdapter {
         if (player != null) player.dispose();
         if (batch != null) batch.dispose();
         if (enemyTex != null) enemyTex.dispose();
+        if (keyTexture != null) keyTexture.dispose();
         if (hud != null) hud.dispose();
     }
 

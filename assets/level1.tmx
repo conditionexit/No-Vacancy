@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="60" height="40" tilewidth="32" tileheight="32" infinite="0" nextlayerid="18" nextobjectid="22">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="60" height="40" tilewidth="32" tileheight="32" infinite="0" nextlayerid="18" nextobjectid="23">
  <tileset firstgid="1" source="tileset.tsx"/>
  <tileset firstgid="25" source="player.tsx"/>
  <layer id="16" name="ground" width="60" height="40">
@@ -151,6 +151,9 @@
    <point/>
   </object>
   <object id="21" name="enemy_3" type="enemy" x="711" y="985">
+   <point/>
+  </object>
+  <object id="22" name="key_1" type="key" x="660" y="1260">
    <point/>
   </object>
  </objectgroup>

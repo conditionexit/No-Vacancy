@@ -26,13 +26,15 @@ import com.badlogic.gdx.utils.Array;
  * {@link #drawRow(SpriteBatch, int)}. This ordering lets {@link Main} place
  * players and enemies between rows, which gives tall wall tiles a natural
  * foreground effect. The objects layer contributes player and enemy spawn
- * locations in the TMX file's world-pixel coordinate system.</p>
+ * locations and key positions in the TMX file's world-pixel coordinate
+ * system.</p>
  *
  * <p>This class owns the loaded {@link TiledMap} and its renderer. Call
  * {@link #dispose()} once the level is no longer needed.</p>
  *
  * @author Fuad Jafarli
  * @implNote Tweaked by Mahammad
+ * @implNote Key spawn loading added by Yusif.
  * @see Player
  * @see Enemy
  */
@@ -55,6 +57,7 @@ public class Maze {
     /** Raw player-spawn object position, before a sprite-specific offset. */
     public final Vector2 playerSpawn = new Vector2();
     public final Array<Vector2> enemySpawns = new Array<>();
+    public final Array<Vector2> keySpawns = new Array<>();
 
     /**
      * Loads a TMX level and extracts its rendering layers and spawn objects.
@@ -95,6 +98,9 @@ public class Maze {
                     enemySpawns.add(new Vector2(ox, oy));
                 }
 
+                if ("key".equals(type)) {
+                    keySpawns.add(new Vector2(ox, oy));
+                }
                 if ("player_spawn".equals(o.getName())) {
                     playerSpawn.set(ox, oy);
                 }
