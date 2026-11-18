@@ -153,6 +153,9 @@
   <object id="21" name="enemy_3" type="enemy" x="711" y="985">
    <point/>
   </object>
+  <object id="22" name="key_1" type="key" x="660" y="1260">
+   <point/>
+  </object>
   <object id="22" name="trap_1" type="trap" x="608" y="1152" width="32" height="32"/>
   <object id="23" name="trap_2" type="trap" x="608" y="1024" width="32" height="32"/>
   <object id="24" name="trap_3" type="trap" x="608" y="896" width="32" height="32"/>

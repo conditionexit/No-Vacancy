@@ -1,5 +1,12 @@
 package entities;
 
+/**
+ * A positioned hazard that deals a fixed amount of damage when triggered.
+ *
+ * <p>This class stores trap data; collision detection and applying damage are
+ * handled by the game logic.</p>
+ */
+public class Trap {
 import java.util.Objects;
 import java.util.function.IntPredicate;
 
@@ -16,6 +23,14 @@ public final class Trap {
     private double remaining;
     private boolean touching;
 
+    /**
+     * Creates a trap with a positive damage value.
+     *
+     * @param x trap x-coordinate in world pixels
+     * @param y trap y-coordinate in world pixels
+     * @param damage damage dealt when triggered; must be greater than zero
+     * @throws IllegalArgumentException if {@code damage} is not positive
+     */
     /** Preserves the original constructor; its collision size defaults to one 32-pixel tile. */
     public Trap(float x, float y, int damage) {
         this(x, y, 32f, 32f, damage, DEFAULT_COOLDOWN);
@@ -37,6 +52,19 @@ public final class Trap {
         this.cooldown = cooldown;
     }
 
+    /** @return trap x-coordinate in world pixels */
+    public float getX() {
+        return x;
+    }
+
+    /** @return trap y-coordinate in world pixels */
+    public float getY() {
+        return y;
+    }
+
+    /** @return damage dealt when the trap is triggered */
+    public int getDamage() {
+        return damage;
     /** Tests actual hitbox intersection; merely touching edges does not count. */
     public boolean overlaps(float px, float py, float pw, float ph) {
         double offsetX = (double) px - x;
