@@ -6,7 +6,6 @@ package entities;
  * <p>This class stores trap data; collision detection and applying damage are
  * handled by the game logic.</p>
  */
-public class Trap {
 import java.util.Objects;
 import java.util.function.IntPredicate;
 
@@ -65,6 +64,8 @@ public final class Trap {
     /** @return damage dealt when the trap is triggered */
     public int getDamage() {
         return damage;
+    }
+
     /** Tests actual hitbox intersection; merely touching edges does not count. */
     public boolean overlaps(float px, float py, float pw, float ph) {
         double offsetX = (double) px - x;
@@ -131,10 +132,7 @@ public final class Trap {
         touching = false;
     }
 
-    public float getX() { return x; }
-    public float getY() { return y; }
     public float getWidth() { return width; }
     public float getHeight() { return height; }
-    public int getDamage() { return damage; }
     public float getCooldown() { return cooldown; }
 }

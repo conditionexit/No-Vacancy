@@ -137,21 +137,6 @@ public class Main extends ApplicationAdapter {
 
         float dt = Gdx.graphics.getDeltaTime();
 
-        // update
-        player.update(dt);
-
-        if (key != null && !key.isCollected()) {
-            float dx = player.x + Player.W / 2 - key.getX();
-            float dy = player.y + Player.H / 2 - key.getY();
-            if (dx * dx + dy * dy < 24f * 24f) {
-                key.collect();
-            }
-        }
-
-        // update
-        for (Enemy e : enemies) {
-            e.update(dt, player.x, player.y);
-            if (e.distanceTo(player.x, player.y) < 24f) player.takeDamage();
         if (Gdx.input.isKeyJustPressed(Input.Keys.P)) {
             paused = !paused;
             if (paused) player.stopFootsteps();
@@ -167,6 +152,15 @@ public class Main extends ApplicationAdapter {
                 trap.update(dt, player.x + Player.HB_X, player.y + Player.HB_Y,
                     Player.HB_W, Player.HB_H, trapDamageReceiver);
             }
+
+            if (key != null && !key.isCollected()) {
+                float dx = player.x + Player.W / 2 - key.getX();
+                float dy = player.y + Player.H / 2 - key.getY();
+                if (dx * dx + dy * dy < 24f * 24f) {
+                    key.collect();
+                }
+            }
+
             if (player.isDead()) restartLevel();
         }
         updateCamera();
