@@ -2,8 +2,13 @@ package entities;
 
 import java.util.Objects;
 import java.util.function.IntPredicate;
-
-/** A stationary rectangular hazard, independent of hearts, HP, input and rendering. */
+/**
+ * A stationary rectangular hazard that applies damage while the player remains
+ * in contact with it.
+ *
+ * <p>The trap owns its position, size, and contact cooldown. A callback applies
+ * damage so the trap stays independent of player health and rendering.</p>
+ */
 public final class Trap {
     public static final int DEFAULT_DAMAGE = 10;
     public static final float DEFAULT_COOLDOWN = 1f;
@@ -16,7 +21,14 @@ public final class Trap {
     private double remaining;
     private boolean touching;
 
-    /** Preserves the original constructor; its collision size defaults to one 32-pixel tile. */
+    /**
+     * Creates a trap with the default one-tile size and cooldown.
+     *
+     * @param x trap x-coordinate in world pixels
+     * @param y trap y-coordinate in world pixels
+     * @param damage damage dealt when triggered; must be greater than zero
+     * @throws IllegalArgumentException if {@code damage} is not positive
+     */
     public Trap(float x, float y, int damage) {
         this(x, y, 32f, 32f, damage, DEFAULT_COOLDOWN);
     }
@@ -37,7 +49,16 @@ public final class Trap {
         this.cooldown = cooldown;
     }
 
-    /** Tests actual hitbox intersection; merely touching edges does not count. */
+    /**
+     * Tests whether a player rectangle overlaps this trap.
+     * Merely touching the edges does not count as overlap.
+     *
+     * @param px player hitbox x-coordinate
+     * @param py player hitbox y-coordinate
+     * @param pw player hitbox width
+     * @param ph player hitbox height
+     * @return {@code true} when the rectangles overlap
+     */
     public boolean overlaps(float px, float py, float pw, float ph) {
         double offsetX = (double) px - x;
         double offsetY = (double) py - y;
@@ -48,11 +69,20 @@ public final class Trap {
     }
 
     /**
-     * Advances only gameplay time and delivers due hits while overlapping.
-     * The receiver handles health and returns false when it cannot accept a hit
-     * (for example, after death). Call this only during active, unpaused play.
-     * Leaving stops damage but does not bypass an outstanding cooldown.
-     * Long continuous-contact frames retain elapsed cooldown intervals.
+     * Advances trap cooldown time and delivers any due damage while overlapping.
+     * The receiver returns false when the player cannot accept damage. Call this
+     * only during active play. Leaving stops damage but preserves any remaining
+     * cooldown.
+     *
+     * @param dt elapsed active gameplay time in seconds
+     * @param px player hitbox x-coordinate
+     * @param py player hitbox y-coordinate
+     * @param pw player hitbox width
+     * @param ph player hitbox height
+     * @param receiveDamage callback that receives damage amount and reports
+     *                      whether it was accepted
+     * @throws IllegalArgumentException if {@code dt} is negative or not finite
+     * @throws NullPointerException if {@code receiveDamage} is null
      */
     public void update(float dt, float px, float py, float pw, float ph,
                        IntPredicate receiveDamage) {
@@ -96,17 +126,23 @@ public final class Trap {
     }
 
 
-    /** Restores the initial, immediately ready state on level restart. */
+    /** Restores the immediately ready state when the level restarts. */
     public void reset() {
         resetGeneration++;
         remaining = 0;
         touching = false;
     }
 
+    /** @return trap x-coordinate in world pixels */
     public float getX() { return x; }
+    /** @return trap y-coordinate in world pixels */
     public float getY() { return y; }
+    /** @return trap width in world pixels */
     public float getWidth() { return width; }
+    /** @return trap height in world pixels */
     public float getHeight() { return height; }
+    /** @return damage dealt on each accepted hit */
     public int getDamage() { return damage; }
+    /** @return minimum time between accepted hits, in seconds */
     public float getCooldown() { return cooldown; }
 }
