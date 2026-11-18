@@ -255,6 +255,19 @@ public class Player {
         return true;
     }
 
+    /** Removes one heart using the trap's own cooldown. */
+    boolean takeTrapHit() {
+        if (isDead()) return false;
+        lives--;
+        return true;
+    }
+
+    /** Stops movement audio while gameplay is paused. */
+    void stopFootsteps() {
+        moving = false;
+        updateStepSound();
+    }
+
     /**
      * Restores one life without exceeding {@link #MAX_LIVES}.
      */
