@@ -11,10 +11,10 @@
         },
         "level1.tmx": {
             "scale": 0.777,
-            "selectedLayer": 1,
+            "selectedLayer": 3,
             "viewCenter": {
-                "x": 954.3114543114542,
-                "y": 591.3770913770913
+                "x": 873.873873873874,
+                "y": 864.2213642213642
             }
         },
         "player.tsx": {
