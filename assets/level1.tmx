@@ -142,7 +142,7 @@
   <object id="16" name="player_spawn" x="621.538" y="1260">
    <point/>
   </object>
-  <object id="17" name="enemy_2" type="enemy" x="1880.62" y="660.308">
+  <object id="17" name="enemy_10" type="enemy" x="1880.62" y="660.308">
    <point/>
   </object>
   <object id="19" name="enemy_1" type="enemy" x="1166" y="371">
