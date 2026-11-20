@@ -156,5 +156,9 @@
   <object id="27" name="enemy_1" type="enemy" x="544.402" y="978.121">
    <point/>
   </object>
+  <object id="35" name="potion_1" type="potion" x="650" y="1150">
+    <point/>
+  </object>
+
  </objectgroup>
 </map>

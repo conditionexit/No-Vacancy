@@ -61,6 +61,7 @@ public class Maze {
     public final Array<Vector2> enemySpawns = new Array<>();
     public final Array<Vector2> keySpawns = new Array<>();
     final Array<Trap> traps = new Array<>();
+    public final Array<Vector2> potionSpawns = new Array<>();
 
     /**
      * Loads a TMX level and extracts its rendering layers and spawn objects.
@@ -115,6 +116,10 @@ public class Maze {
                 }
                 if ("player_spawn".equals(o.getName())) {
                     playerSpawn.set(ox, oy);
+                }
+
+                if("potion".equals(type)){
+                    potionSpawns.add(new Vector2(ox, oy));
                 }
             }
 
