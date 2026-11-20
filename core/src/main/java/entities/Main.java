@@ -35,9 +35,11 @@ import java.util.function.IntPredicate;
  * @implNote Originally developed by Fuad Jafarli; subsequently modified by
  *           Mahammad and Islam.
  * @implNote Key collection and HUD feedback added by Yusif.
+ * @implNote Potion collection and health restoration added by Mahammad.
  * @see Maze
  * @see Player
  * @see Enemy
+ * @see Potion
  */
 public class Main extends ApplicationAdapter {
     OrthographicCamera camera = new OrthographicCamera();

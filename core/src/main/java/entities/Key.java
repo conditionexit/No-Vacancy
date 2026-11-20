@@ -47,6 +47,8 @@ public class Key {
         collected = true;
     }
 
-    /** Marks it as not collected for restaring levels. */
-    public void drop() {collected = false;}
+    /** Marks this key as uncollected so it reappears when the level restarts. */
+    public void drop() {
+        collected = false;
+    }
 }
