@@ -46,4 +46,7 @@ public class Key {
     public void collect() {
         collected = true;
     }
+
+    /** Marks it as not collected for restaring levels. */
+    public void drop() {collected = false;}
 }
