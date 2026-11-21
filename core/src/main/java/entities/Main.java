@@ -1,8 +1,8 @@
 package entities;
 
-import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -41,7 +41,7 @@ import java.util.function.IntPredicate;
  * @see Enemy
  * @see Potion
  */
-public class Main extends ApplicationAdapter {
+public class Main extends ScreenAdapter {
     OrthographicCamera camera = new OrthographicCamera();
     Viewport viewport = new FitViewport(640, 500, camera);
     SpriteBatch batch;
@@ -59,6 +59,21 @@ public class Main extends ApplicationAdapter {
     private boolean paused;
     private boolean applicationPaused;
 
+    private final NoVacancyGame game;
+    private final String levelFile;
+
+    /**
+     * Creates the gameplay screen for one level. {@link NoVacancyGame} is the application
+     * entry point; this class is now the screen it shows while a level is being played.
+     *
+     * @param game      application, used for the shared audio settings and to return to the menu
+     * @param levelFile internal asset path of the TMX level to play
+     */
+    public Main(NoVacancyGame game, String levelFile) {
+        this.game = game;
+        this.levelFile = levelFile;
+    }
+
     /**
      * Initializes game-owned resources after libGDX creates the application.
      *
@@ -69,10 +84,11 @@ public class Main extends ApplicationAdapter {
      * the shared enemy texture appropriate for pixel-art rendering.</p>
      */
     @Override
-    public void create() {
+    public void show() {
         batch = new SpriteBatch();
+        game.audio().playMusic();
 
-        maze = new Maze("level1.tmx");
+        maze = new Maze(levelFile);
         if(!maze.isLoaded()){
             return;
         }
@@ -137,10 +153,16 @@ public class Main extends ApplicationAdapter {
      * it remains screen-facing and unobscured.</p>
      */
     @Override
-    public void render() {
+    public void render(float delta) {
         // Clear every frame first, so a failed map load produces a black window.
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        // Esc returns to the main menu (works even if the map failed to load).
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            game.showMenu();
+            return;
+        }
 
         // create() returned before constructing player/enemies/HUD.
         if (maze == null || !maze.isLoaded()) {
@@ -148,6 +170,7 @@ public class Main extends ApplicationAdapter {
         }
 
         float dt = Gdx.graphics.getDeltaTime();
+        player.setSfxVolume(game.audio().sfxVolume());   // follows the SFX/master/mute settings
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.P)) {
             paused = !paused;
@@ -228,8 +251,8 @@ public class Main extends ApplicationAdapter {
 
     private void restartLevel() {
         player.reset();
-        key.drop();
-        potion.drop();
+        if (key != null) key.drop();        // levels are not required to contain a key or potion
+        if (potion != null) potion.drop();
         for (Trap trap : maze.traps) trap.reset();
     }
 
@@ -242,6 +265,12 @@ public class Main extends ApplicationAdapter {
     @Override
     public void resume() {
         applicationPaused = false;
+    }
+
+    /** Called when the menu replaces this screen: silence the footsteps loop. */
+    @Override
+    public void hide() {
+        if (player != null) player.stopFootsteps();
     }
 
     /**
