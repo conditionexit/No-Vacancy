@@ -35,9 +35,11 @@ import java.util.function.IntPredicate;
  * @implNote Originally developed by Fuad Jafarli; subsequently modified by
  *           Mahammad and Islam.
  * @implNote Key collection and HUD feedback added by Yusif.
+ * @implNote Potion collection and health restoration added by Mahammad.
  * @see Maze
  * @see Player
  * @see Enemy
+ * @see Potion
  */
 public class Main extends ApplicationAdapter {
     OrthographicCamera camera = new OrthographicCamera();
@@ -50,6 +52,8 @@ public class Main extends ApplicationAdapter {
     Texture enemyTex;
     Key key;
     Texture keyTexture;
+    Potion potion;
+    Texture potionTexture;
     private ShapeRenderer trapRenderer;
     private IntPredicate trapDamageReceiver;
     private boolean paused;
@@ -72,6 +76,7 @@ public class Main extends ApplicationAdapter {
         if(!maze.isLoaded()){
             return;
         }
+
         player = new Player(maze);
         trapDamageReceiver = amount -> player.takeTrapHit();
         trapRenderer = new ShapeRenderer();
@@ -81,6 +86,13 @@ public class Main extends ApplicationAdapter {
             key = new Key(spawn.x, spawn.y);
             keyTexture = new Texture("key.png");
             keyTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        }
+
+        if(maze.potionSpawns.size > 0){
+            Vector2 potionSpawn = maze.potionSpawns.first();
+            potion = new Potion(potionSpawn.x, potionSpawn.y);
+            potionTexture = new Texture("potions/health potion 64 x 64.png");
+            potionTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         }
 
         enemyTex = new Texture("enemy.png");
@@ -141,6 +153,7 @@ public class Main extends ApplicationAdapter {
             paused = !paused;
             if (paused) player.stopFootsteps();
         }
+
         if (!paused && !applicationPaused) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.R)) restartLevel();
             player.update(dt);
@@ -158,6 +171,17 @@ public class Main extends ApplicationAdapter {
                 float dy = player.y + Player.H / 2 - key.getY();
                 if (dx * dx + dy * dy < 24f * 24f) {
                     key.collect();
+                }
+            }
+
+            if(potion != null && !potion.isConcumed()) {
+                float dx = player.x + Player.W / 2 - potion.getX();
+                float dy = player.y + Player.H / 2 - potion.getY();
+                if (dx * dx + dy * dy < 24f * 24f) {
+                    if(player.getLives() < Player.MAX_LIVES){
+                        potion.consume();
+                        player.heal();
+                    }
                 }
             }
 
@@ -185,18 +209,27 @@ public class Main extends ApplicationAdapter {
                 && (int) (key.getY() / maze.tileHeight()) == row) {
                 batch.draw(keyTexture, key.getX() - 12, key.getY() - 12, 24, 24);
             }
+
+            if(potion != null && !potion.isConcumed()
+                && (int) (potion.getY() / maze.tileHeight()) == row) {
+                batch.draw(potionTexture, potion.getX() - 12, potion.getY() - 12, 24, 24);
+            }
+
             for (Enemy e : enemies) {
                 if (e.row(maze.tileHeight()) == row) e.draw(batch);
             }
             if (row == feetRow) player.draw(batch);               // player between rows
             maze.drawRow(batch, row);
         }
+
         batch.end();
         hud.draw(batch, player.getLives(), Player.MAX_LIVES, key != null && key.isCollected());
     }
 
     private void restartLevel() {
         player.reset();
+        key.drop();
+        potion.drop();
         for (Trap trap : maze.traps) trap.reset();
     }
 
@@ -242,7 +275,7 @@ public class Main extends ApplicationAdapter {
         if (keyTexture != null) keyTexture.dispose();
         if (hud != null) hud.dispose();
         if (trapRenderer != null) trapRenderer.dispose();
+        if(potionTexture != null) potionTexture.dispose();
     }
-
 
 }

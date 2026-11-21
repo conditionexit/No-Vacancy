@@ -37,8 +37,10 @@ import com.badlogic.gdx.utils.Array;
  * @author Fuad Jafarli
  * @implNote Tweaked by Mahammad
  * @implNote Key spawn loading added by Yusif.
+ * @implNote Potion spawn loading added by Mahammad.
  * @see Player
  * @see Enemy
+ * @see Potion
  */
 public class Maze {
     /**
@@ -61,6 +63,8 @@ public class Maze {
     public final Array<Vector2> enemySpawns = new Array<>();
     public final Array<Vector2> keySpawns = new Array<>();
     final Array<Trap> traps = new Array<>();
+    /** World-pixel spawn positions for collectible health potions. */
+    public final Array<Vector2> potionSpawns = new Array<>();
 
     /**
      * Loads a TMX level and extracts its rendering layers and spawn objects.
@@ -115,6 +119,10 @@ public class Maze {
                 }
                 if ("player_spawn".equals(o.getName())) {
                     playerSpawn.set(ox, oy);
+                }
+
+                if("potion".equals(type)){
+                    potionSpawns.add(new Vector2(ox, oy));
                 }
             }
 
