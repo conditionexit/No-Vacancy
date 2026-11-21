@@ -8,6 +8,7 @@ import entities.NoVacancyGame;
  * <p>Changes apply immediately (the music volume follows the sliders live) and are saved
  * whenever a slider is released, a key adjusts it, the mute toggle is used, or the screen
  * is left, so they persist across sessions.</p>
+ * @author zarifa
  */
 public final class SettingsScreen extends UiScreen {
 
