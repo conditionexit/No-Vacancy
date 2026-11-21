@@ -7,6 +7,7 @@ package entities.menu;
  * {@link Level} line to {@link #LEVELS}. The level-select screen, the "Continue"
  * button and the save data all pick it up automatically. Maps must follow the same
  * layer/object conventions as {@code level1.tmx} (see {@code entities.Maze}).</p>
+ * @author zarifa
  */
 public final class LevelRegistry {
 

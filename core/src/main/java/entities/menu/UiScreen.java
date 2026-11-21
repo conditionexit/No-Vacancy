@@ -35,6 +35,7 @@ import java.util.function.Supplier;
  *
  * <p>Controls: W/S or Up/Down move, Enter/Space select, A/D or Left/Right adjust a
  * slider, Esc goes back ({@link #onBack()}); the mouse hovers, clicks and drags sliders.</p>
+ * @author zarifa
  */
 public abstract class UiScreen extends ScreenAdapter {
     public static final float W = 640f;

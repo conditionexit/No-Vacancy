@@ -13,6 +13,7 @@ import com.badlogic.gdx.math.MathUtils;
  * footsteps in {@code entities.Player}) read {@link #sfxVolume()} and apply it
  * themselves, because libGDX {@code Sound} instances are owned by their users.
  * Settings are saved with libGDX {@link Preferences}, so they persist across sessions.</p>
+ * @author zarifa
  */
 public final class AudioManager {
     private static final String PREFS_NAME = "no-vacancy-settings";

@@ -9,6 +9,7 @@ import entities.NoVacancyGame;
  *
  * <p>"Continue" is greyed out (and skipped by keyboard navigation) until the player has
  * started a level at least once; when a save exists it is focused by default.</p>
+ * @author zarifa
  */
 public final class MenuScreen extends UiScreen {
 

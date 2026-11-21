@@ -13,6 +13,7 @@ import com.badlogic.gdx.Preferences;
  * it and the next level unlocks and becomes the "Continue" target.</p>
  *
  * <p>On desktop the file lives in the user's home folder under {@code .prefs/}.</p>
+ * @author zarifa
  */
 public final class SaveData {
     private static final String PREFS_NAME = "no-vacancy-save";

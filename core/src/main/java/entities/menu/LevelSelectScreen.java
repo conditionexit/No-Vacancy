@@ -5,6 +5,7 @@ import entities.NoVacancyGame;
 /**
  * Lists every level in {@link LevelRegistry}; locked levels (see {@link SaveData}) are
  * greyed out. Up to six levels are shown in one column, more switch to two columns.
+ * @author zarifa
  */
 public final class LevelSelectScreen extends UiScreen {
 
