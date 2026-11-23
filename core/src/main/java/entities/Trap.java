@@ -5,6 +5,7 @@ package entities;
  *
  * <p>This class stores trap data; collision detection and applying damage are
  * handled by the game logic.</p>
+ * @author Zarifa
  */
 import java.util.Objects;
 import java.util.function.IntPredicate;
