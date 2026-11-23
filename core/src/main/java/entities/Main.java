@@ -1,8 +1,8 @@
 package entities;
 
-import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -35,11 +35,13 @@ import java.util.function.IntPredicate;
  * @implNote Originally developed by Fuad Jafarli; subsequently modified by
  *           Mahammad and Islam.
  * @implNote Key collection and HUD feedback added by Yusif.
+ * @implNote Potion collection and health restoration added by Mahammad.
  * @see Maze
  * @see Player
  * @see Enemy
+ * @see Potion
  */
-public class Main extends ApplicationAdapter {
+public class Main extends ScreenAdapter {
     OrthographicCamera camera = new OrthographicCamera();
     Viewport viewport = new FitViewport(640, 500, camera);
     SpriteBatch batch;
@@ -48,31 +50,49 @@ public class Main extends ApplicationAdapter {
     Player player;
     Array<Enemy> enemies = new Array<>();
     Texture enemyTex;
+    Key key;
+    Texture keyTexture;
+    Potion potion;
+    Texture potionTexture;
     private ShapeRenderer trapRenderer;
     private IntPredicate trapDamageReceiver;
     private boolean paused;
     private boolean applicationPaused;
-    Key key;
-    Texture keyTexture;
+
+    private final NoVacancyGame game;
+    private final String levelFile;
+
+    /**
+     * Creates the gameplay screen for one level. {@link NoVacancyGame} is the application
+     * entry point; this class is now the screen it shows while a level is being played.
+     *
+     * @param game      application, used for the shared audio settings and to return to the menu
+     * @param levelFile internal asset path of the TMX level to play
+     */
+    public Main(NoVacancyGame game, String levelFile) {
+        this.game = game;
+        this.levelFile = levelFile;
+    }
 
     /**
      * Initializes game-owned resources after libGDX creates the application.
      *
-     * <p>The method loads the TMX level, creates a player at its spawn, creates
-     * the key and enemies from map objects, and initializes trap handling and
-     * the HUD.
+     * <p>The method loads the TMX level, creates a player at its spawn,
+     * creates one enemy for every enemy-spawn object, and creates the HUD.
      * Enemy spawn points are converted from map points to sprite bottom-left
      * coordinates by subtracting half the sprite size. Nearest filtering keeps
      * the shared enemy texture appropriate for pixel-art rendering.</p>
      */
     @Override
-    public void create() {
+    public void show() {
         batch = new SpriteBatch();
+        game.audio().playMusic();
 
-        maze = new Maze("level1.tmx");
+        maze = new Maze(levelFile);
         if(!maze.isLoaded()){
             return;
         }
+
         player = new Player(maze);
         trapDamageReceiver = amount -> player.takeTrapHit();
         trapRenderer = new ShapeRenderer();
@@ -82,6 +102,13 @@ public class Main extends ApplicationAdapter {
             key = new Key(spawn.x, spawn.y);
             keyTexture = new Texture("key.png");
             keyTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        }
+
+        if(maze.potionSpawns.size > 0){
+            Vector2 potionSpawn = maze.potionSpawns.first();
+            potion = new Potion(potionSpawn.x, potionSpawn.y);
+            potionTexture = new Texture("potions/health potion 64 x 64.png");
+            potionTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         }
 
         enemyTex = new Texture("enemy.png");
@@ -126,10 +153,16 @@ public class Main extends ApplicationAdapter {
      * it remains screen-facing and unobscured.</p>
      */
     @Override
-    public void render() {
+    public void render(float delta) {
         // Clear every frame first, so a failed map load produces a black window.
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        // Esc returns to the main menu (works even if the map failed to load).
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            game.showMenu();
+            return;
+        }
 
         // create() returned before constructing player/enemies/HUD.
         if (maze == null || !maze.isLoaded()) {
@@ -137,11 +170,13 @@ public class Main extends ApplicationAdapter {
         }
 
         float dt = Gdx.graphics.getDeltaTime();
+        player.setSfxVolume(game.audio().sfxVolume());   // follows the SFX/master/mute settings
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.P)) {
             paused = !paused;
             if (paused) player.stopFootsteps();
         }
+
         if (!paused && !applicationPaused) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.R)) restartLevel();
             player.update(dt);
@@ -153,6 +188,7 @@ public class Main extends ApplicationAdapter {
                 trap.update(dt, player.x + Player.HB_X, player.y + Player.HB_Y,
                     Player.HB_W, Player.HB_H, trapDamageReceiver);
             }
+
             if (key != null && !key.isCollected()) {
                 float dx = player.x + Player.W / 2 - key.getX();
                 float dy = player.y + Player.H / 2 - key.getY();
@@ -160,6 +196,18 @@ public class Main extends ApplicationAdapter {
                     key.collect();
                 }
             }
+
+            if(potion != null && !potion.isConcumed()) {
+                float dx = player.x + Player.W / 2 - potion.getX();
+                float dy = player.y + Player.H / 2 - potion.getY();
+                if (dx * dx + dy * dy < 24f * 24f) {
+                    if(player.getLives() < Player.MAX_LIVES){
+                        potion.consume();
+                        player.heal();
+                    }
+                }
+            }
+
             if (player.isDead()) restartLevel();
         }
         updateCamera();
@@ -184,18 +232,27 @@ public class Main extends ApplicationAdapter {
                 && (int) (key.getY() / maze.tileHeight()) == row) {
                 batch.draw(keyTexture, key.getX() - 12, key.getY() - 12, 24, 24);
             }
+
+            if(potion != null && !potion.isConcumed()
+                && (int) (potion.getY() / maze.tileHeight()) == row) {
+                batch.draw(potionTexture, potion.getX() - 12, potion.getY() - 12, 24, 24);
+            }
+
             for (Enemy e : enemies) {
                 if (e.row(maze.tileHeight()) == row) e.draw(batch);
             }
             if (row == feetRow) player.draw(batch);               // player between rows
             maze.drawRow(batch, row);
         }
+
         batch.end();
         hud.draw(batch, player.getLives(), Player.MAX_LIVES, key != null && key.isCollected());
     }
 
     private void restartLevel() {
         player.reset();
+        if (key != null) key.drop();        // levels are not required to contain a key or potion
+        if (potion != null) potion.drop();
         for (Trap trap : maze.traps) trap.reset();
     }
 
@@ -208,6 +265,12 @@ public class Main extends ApplicationAdapter {
     @Override
     public void resume() {
         applicationPaused = false;
+    }
+
+    /** Called when the menu replaces this screen: silence the footsteps loop. */
+    @Override
+    public void hide() {
+        if (player != null) player.stopFootsteps();
     }
 
     /**
@@ -241,7 +304,7 @@ public class Main extends ApplicationAdapter {
         if (keyTexture != null) keyTexture.dispose();
         if (hud != null) hud.dispose();
         if (trapRenderer != null) trapRenderer.dispose();
+        if(potionTexture != null) potionTexture.dispose();
     }
-
 
 }

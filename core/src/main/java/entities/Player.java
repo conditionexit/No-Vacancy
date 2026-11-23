@@ -50,6 +50,8 @@ public class Player {
     private final Sound stepSound;
     private long stepId = -1;
     private boolean stepPlaying = false;
+    /** Footstep loudness (0..1) from the SFX settings; multiplied with the base footstep volume. */
+    private float sfxVolume = 1f;
 
     /**
      * Creates a player linked to a maze and places it at that maze's player
@@ -160,7 +162,7 @@ public class Player {
      */
     private void updateStepSound() {
         if (moving && !stepPlaying) {
-            stepId = stepSound.loop(0.5f);
+            stepId = stepSound.loop(0.5f * sfxVolume);
             stepPlaying = true;
         } else if (!moving && stepPlaying) {
             stepSound.stop(stepId);
@@ -260,6 +262,15 @@ public class Player {
         if (isDead()) return false;
         lives--;
         return true;
+    }
+
+    /**
+     * Applies the effective SFX volume (master x sfx, 0..1) to the footstep sound,
+     * including a footstep loop that is already playing.
+     */
+    void setSfxVolume(float volume) {
+        sfxVolume = Math.max(0f, Math.min(1f, volume));
+        if (stepPlaying) stepSound.setVolume(stepId, 0.5f * sfxVolume);
     }
 
     /** Stops movement audio while gameplay is paused. */

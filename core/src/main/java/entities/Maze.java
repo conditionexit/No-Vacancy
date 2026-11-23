@@ -28,8 +28,8 @@ import com.badlogic.gdx.utils.Array;
  * {@link #drawRow(SpriteBatch, int)}. This ordering lets {@link Main} place
  * players and enemies between rows, which gives tall wall tiles a natural
  * foreground effect. The objects layer contributes player and enemy spawn
- * locations, key positions, and traps in the TMX file's world-pixel
- * coordinate system.</p>
+ * locations and key positions in the TMX file's world-pixel coordinate
+ * system.</p>
  *
  * <p>This class owns the loaded {@link TiledMap} and its renderer. Call
  * {@link #dispose()} once the level is no longer needed.</p>
@@ -37,8 +37,10 @@ import com.badlogic.gdx.utils.Array;
  * @author Fuad Jafarli
  * @implNote Tweaked by Mahammad
  * @implNote Key spawn loading added by Yusif.
+ * @implNote Potion spawn loading added by Mahammad.
  * @see Player
  * @see Enemy
+ * @see Potion
  */
 public class Maze {
     /**
@@ -59,17 +61,17 @@ public class Maze {
     /** Raw player-spawn object position, before a sprite-specific offset. */
     public final Vector2 playerSpawn = new Vector2();
     public final Array<Vector2> enemySpawns = new Array<>();
-    final Array<Trap> traps = new Array<>();
     public final Array<Vector2> keySpawns = new Array<>();
+    final Array<Trap> traps = new Array<>();
+    /** World-pixel spawn positions for collectible health potions. */
+    public final Array<Vector2> potionSpawns = new Array<>();
 
     /**
      * Loads a TMX level and extracts its rendering layers and spawn objects.
      *
      * <p>Nearest-neighbour texture filtering preserves crisp pixel-art edges.
-     * Objects whose type is {@code enemy} become enemy spawns, {@code key}
-     * objects become key positions, and rectangular {@code trap} objects
-     * become hazards. The object named {@code player_spawn} determines
-     * {@link #playerSpawn}. The map is
+     * Objects whose type is {@code enemy} become enemy spawns; the object
+     * named {@code player_spawn} determines {@link #playerSpawn}. The map is
      * expected to contain the layers named {@code ground}, {@code walls},
      * {@code decor}, and {@code objects}, plus any tilesets requested through
      * {@link #animation(String, int)}.</p>
@@ -117,6 +119,10 @@ public class Maze {
                 }
                 if ("player_spawn".equals(o.getName())) {
                     playerSpawn.set(ox, oy);
+                }
+
+                if("potion".equals(type)){
+                    potionSpawns.add(new Vector2(ox, oy));
                 }
             }
 
