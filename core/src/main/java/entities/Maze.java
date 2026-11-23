@@ -265,11 +265,65 @@ public class Maze {
      * @param layer tile layer to inspect
      * @param row zero-based row in {@code layer}
      */
+
+    private final float[] verts = new float[20];
+
     private void drawLayerRow(SpriteBatch batch, TiledMapTileLayer layer, int row) {
         float tw = layer.getTileWidth(), th = layer.getTileHeight();
+        float color = batch.getPackedColor();
+
         for (int col = 0; col < layer.getWidth(); col++) {
             TiledMapTileLayer.Cell cell = layer.getCell(col, row);
-            if (cell != null) batch.draw(cell.getTile().getTextureRegion(), col * tw, row * th);
+            if (cell == null) continue;
+
+            TextureRegion r = cell.getTile().getTextureRegion();
+            float x1 = col * tw, y1 = row * th;
+            float x2 = x1 + r.getRegionWidth(), y2 = y1 + r.getRegionHeight();
+
+            float u1 = r.getU(), v1 = r.getV2(), u2 = r.getU2(), v2 = r.getV();
+
+            // vertex layout: x, y, color, u, v (5 floats each)
+            verts[0] = x1; verts[1] = y1; verts[2] = color; verts[3] = u1; verts[4] = v1;
+            verts[5] = x1; verts[6] = y2; verts[7] = color; verts[8] = u1; verts[9] = v2;
+            verts[10] = x2; verts[11] = y2; verts[12] = color; verts[13] = u2; verts[14] = v2;
+            verts[15] = x2; verts[16] = y1; verts[17] = color; verts[18] = u2; verts[19] = v1;
+
+            if (cell.getFlipHorizontally()) {
+                float t = verts[3]; verts[3] = verts[13]; verts[13] = t;
+                t = verts[8]; verts[8] = verts[18]; verts[18] = t;
+            }
+            if (cell.getFlipVertically()) {
+                float t = verts[4]; verts[4] = verts[14]; verts[14] = t;
+                t = verts[9]; verts[9] = verts[19]; verts[19] = t;
+            }
+
+            switch (cell.getRotation()) {
+                case TiledMapTileLayer.Cell.ROTATE_90: {
+                    float tv = verts[4];
+                    verts[4] = verts[9]; verts[9] = verts[14]; verts[14] = verts[19]; verts[19] = tv;
+                    float tu = verts[3];
+                    verts[3] = verts[8]; verts[8] = verts[13]; verts[13] = verts[18]; verts[18] = tu;
+                    break;
+                }
+                case TiledMapTileLayer.Cell.ROTATE_180: {
+                    float t = verts[3]; verts[3] = verts[13]; verts[13] = t;
+                    t = verts[8]; verts[8] = verts[18]; verts[18] = t;
+                    t = verts[4]; verts[4] = verts[14]; verts[14] = t;
+                    t = verts[9]; verts[9] = verts[19]; verts[19] = t;
+                    break;
+                }
+                case TiledMapTileLayer.Cell.ROTATE_270: {
+                    float tv = verts[4];
+                    verts[4] = verts[19]; verts[19] = verts[14]; verts[14] = verts[9]; verts[9] = tv;
+                    float tu = verts[3];
+                    verts[3] = verts[18]; verts[18] = verts[13]; verts[13] = verts[8]; verts[8] = tu;
+                    break;
+                }
+                default:
+                    break;
+            }
+
+            batch.draw(r.getTexture(), verts, 0, 20);
         }
     }
 
