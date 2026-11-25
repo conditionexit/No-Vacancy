@@ -23,7 +23,7 @@ public class Lwjgl3Launcher {
         //// refresh rates. The Vsync setting above should limit the actual FPS to match the monitor.
         configuration.setForegroundFPS(Lwjgl3ApplicationConfiguration.getDisplayMode().refreshRate + 1);
         //// If you remove the above line and set Vsync to false, you can get unlimited FPS, which can be
-        //// useful for testing performance, but can also be very stressful to some hardware.
+        //// useful for testing performanc9e, but can also be very stressful to some hardware.
         //// You may also need to configure GPU drivers to fully disable Vsync; this can cause screen tearing.
 
         configuration.setWindowedMode(1200, 1080);
@@ -44,3 +44,4 @@ public class Lwjgl3Launcher {
         return configuration;
     }
 }
+

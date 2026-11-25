@@ -53,6 +53,8 @@ public class Hud {
             batch.draw(heartTex, PAD + i * (SIZE + GAP), y, SIZE, SIZE);
         }
         if (hasKey) {
+            // The last heart may have left a faded tint on the batch.
+            batch.setColor(Color.WHITE);
             batch.draw(keyTex, PAD, y - SIZE - GAP, SIZE, SIZE);
         }
         batch.setColor(Color.WHITE);                  // reset tint
