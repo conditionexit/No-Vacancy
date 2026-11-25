@@ -24,7 +24,7 @@ public final class LevelRegistry {
 
     private static final Level[] LEVELS = {
         new Level("LEVEL 1", "level1.tmx"),
-        // new Level("LEVEL 2", "level2.tmx"),
+        new Level("LEVEL 2", "level2.tmx"),
     };
 
     private LevelRegistry() {}
