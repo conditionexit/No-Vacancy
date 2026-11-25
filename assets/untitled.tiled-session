@@ -1,5 +1,5 @@
 {
-    "activeFile": "mainlevbuild.tsx",
+    "activeFile": "level1.tmx",
     "expandedProjectPaths": [
         "."
     ],
@@ -18,15 +18,37 @@
             "scaleInEditor": 1
         },
         "level1.tmx": {
-            "scale": 0.777,
-            "selectedLayer": 3,
+            "expandedObjectLayers": [
+                17
+            ],
+            "scale": 0.6623,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 873.873873873874,
-                "y": 864.2213642213642
+                "x": 1010.8712064019326,
+                "y": 659.0668881171674
+            }
+        },
+        "level2.tmx": {
+            "expandedGroupLayers": [
+                11
+            ],
+            "scale": 0.7195,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 913.8290479499653,
+                "y": 634.4683808200139
+            }
+        },
+        "level3.tmx": {
+            "scale": 0.7159635416666666,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 940.6903575455572,
+                "y": 640.3957370967156
             }
         },
         "mainlevbuild.tsx": {
-            "scaleInDock": 2,
+            "scaleInDock": 1.5757,
             "scaleInEditor": 1
         },
         "player.tsx": {
@@ -51,11 +73,12 @@
     ],
     "project": "untitled.tiled-project",
     "recentFiles": [
-        "level1.tmx",
-        "tileset.tsx",
-        "player.tsx",
         "decorative.tsx",
         "mainlevbuild.tsx",
+        "player.tsx",
+        "tileset.tsx",
+        "level1.tmx",
+        "level2.tmx",
         "RF-CAT-COMBING.tsx",
         "animations.tsx"
     ],

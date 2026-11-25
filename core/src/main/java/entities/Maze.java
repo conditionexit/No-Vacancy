@@ -265,7 +265,6 @@ public class Maze {
      * @param layer tile layer to inspect
      * @param row zero-based row in {@code layer}
      */
-
     private final float[] verts = new float[20];
 
     private void drawLayerRow(SpriteBatch batch, TiledMapTileLayer layer, int row) {

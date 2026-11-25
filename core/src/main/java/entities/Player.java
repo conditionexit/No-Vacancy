@@ -34,7 +34,9 @@ public class Player {
     static final float SPEED = 250f;
 
     static final float HB_X = 6f, HB_W = 20f;   // hitbox, measured from the sprite's bottom-left
-    static final float HB_Y = 6f, HB_H = 60f;   // HB_Y = transparent pixels under the feet
+    // HB_Y = transparent pixels under the feet. HB_H is feet-only (top-down collision):
+    // the head may overlap walls above; feetRow() keeps the draw order correct.
+    static final float HB_Y = 6f, HB_H = 14f;
 
     /** Sprite bottom-left position in maze world coordinates. */
     public float x, y;
@@ -178,6 +180,7 @@ public class Player {
      *              projection matrix
      */
     public void draw(SpriteBatch batch) {
+        Shadow.draw(batch, x + W / 2f, y + HB_Y + 2f, 26f, 10f);
         batch.draw(walk[dir].getKeyFrame(stateTime), x, y, W, H);
     }
 
