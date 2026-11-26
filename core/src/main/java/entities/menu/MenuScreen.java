@@ -2,7 +2,7 @@ package entities.menu;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.MathUtils;
-import entities.NoVacancyGame;
+import entities.Main;
 
 /**
  * The main menu: Start Game, Continue, Levels, Settings and Quit.
@@ -13,7 +13,7 @@ import entities.NoVacancyGame;
  */
 public final class MenuScreen extends UiScreen {
 
-    public MenuScreen(NoVacancyGame game) {
+    public MenuScreen(Main game) {
         super(game);
     }
 

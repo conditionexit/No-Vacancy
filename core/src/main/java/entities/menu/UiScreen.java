@@ -17,7 +17,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import entities.NoVacancyGame;
+import entities.Main;
 
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
@@ -147,7 +147,7 @@ public abstract class UiScreen extends ScreenAdapter {
 
     // -------------------------------------------------------------- state
 
-    protected final NoVacancyGame game;
+    protected final Main game;
     protected final Array<Widget> widgets = new Array<>();
 
     private final OrthographicCamera camera = new OrthographicCamera();
@@ -163,7 +163,7 @@ public abstract class UiScreen extends ScreenAdapter {
     private Widget dragging;
     private float time;
 
-    protected UiScreen(NoVacancyGame game) {
+    protected UiScreen(Main game) {
         this.game = game;
         font.getRegion().getTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
     }

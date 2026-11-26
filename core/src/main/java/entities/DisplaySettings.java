@@ -13,6 +13,7 @@ import com.badlogic.gdx.Preferences;
  * {@link #setMode(int)} and {@link #setFullscreen(boolean)}; until that UI
  * exists, {@link #handleHotkeys()} gives F10 (next resolution) and F11
  * (fullscreen) from any screen's {@code render()}.</p>
+ * @author Fuad
  */
 public final class DisplaySettings {
 

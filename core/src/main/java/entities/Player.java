@@ -6,6 +6,7 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Vector2;
 
 /**
  * Controllable maze-escape character, including movement, presentation, and
@@ -27,16 +28,17 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
  *
  * @see Maze
  * @see Enemy
+ * @see Movement
  */
 public class Player {
     /** Rendered sprite width and height in world pixels. */
     public static final float W = 32f, H = 66f;
     static final float SPEED = 250f;
 
-    static final float HB_X = 6f, HB_W = 20f;   // hitbox, measured from the sprite's bottom-left
-    // HB_Y = transparent pixels under the feet. HB_H is feet-only (top-down collision):
+    static final float HITBOX_OFFSET_X = 6f, HITBOX_WIDTH = 20f;   // hitbox, measured from the sprite's bottom-left
+    // HITBOX_OFFSET_Y = transparent pixels under the feet. HITBOX_HEIGHT is feet-only (top-down collision):
     // the head may overlap walls above; feetRow() keeps the draw order correct.
-    static final float HB_Y = 6f, HB_H = 14f;
+    static final float HITBOX_OFFSET_Y = 6f, HITBOX_HEIGHT = 14f;
 
     /** Sprite bottom-left position in maze world coordinates. */
     public float x, y;
@@ -99,11 +101,11 @@ public class Player {
      * collision-aware movement by one rendered frame.
      *
      * <p>Movement uses W/A/S/D. The input vector is normalized before being
-     * multiplied by {@link #SPEED} and {@code dt}, so diagonal movement
-     * retains the intended speed. A displacement is divided into eight-pixel
-     * substeps; each substep tests the rectangular hitbox against the maze.
-     * Testing x and y independently intentionally permits wall sliding rather
-     * than rejecting the entire diagonal move when only one axis is blocked.</p>
+     * multiplied by {@link #SPEED} and {@code dt} via
+     * {@link Movement#scaleDirection}, so diagonal movement retains the
+     * intended speed. Substep collision resolution and axis sliding are
+     * delegated to {@link Movement#moveWithSlide} using this player's
+     * hitbox check ({@link #free(float, float)}).</p>
      *
      * <p>The method also reduces the post-hit cooldown, advances directional
      * walking animation only while moving, and starts or stops the looping
@@ -128,32 +130,10 @@ public class Player {
 
         updateStepSound();
 
-        float len = (float) Math.sqrt(dx * dx + dy * dy);
-
-        if (len > 0) {
-            dx = dx / len * SPEED * dt;
-            dy = dy / len * SPEED * dt;
-        }
-
-        float maxStep = 8f;
-        int steps = Math.max(
-            1,
-            (int) Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / maxStep)
-        );
-
-        float stepX = dx / steps;
-        float stepY = dy / steps;
-
-        for (int i = 0; i < steps; i++) {
-            if (free(x + stepX, y)) x += stepX;
-            if (free(x, y + stepY)) y += stepY;
-        }
-
-        // movement (separate axes = slide along walls)
-        //float len = (float) Math.sqrt(dx * dx + dy * dy);
-        //if (len > 0) { dx = dx / len * SPEED * dt; dy = dy / len * SPEED * dt; }
-        //if (free(x + dx, y)) x += dx;
-        //if (free(x, y + dy)) y += dy;
+        Vector2 delta = Movement.scaleDirection(dx, dy, SPEED * dt);
+        Vector2 next = Movement.moveWithSlide(x, y, delta.x, delta.y, this::free);
+        x = next.x;
+        y = next.y;
     }
 
     /**
@@ -180,7 +160,7 @@ public class Player {
      *              projection matrix
      */
     public void draw(SpriteBatch batch) {
-        Shadow.draw(batch, x + W / 2f, y + HB_Y + 2f, 26f, 10f);
+        Shadow.draw(batch, x + W / 2f, y + HITBOX_OFFSET_Y + 2f, 26f, 10f);
         batch.draw(walk[dir].getKeyFrame(stateTime), x, y, W, H);
     }
 
@@ -194,17 +174,8 @@ public class Player {
      * @return zero-based maze tile row containing the player's feet
      */
     public int feetRow() {
-        return (int) ((y + HB_Y) / maze.tileHeight());
+        return (int) ((y + HITBOX_OFFSET_Y) / maze.tileHeight());
     }
-
-    // true if the hitbox at (px, py) touches no wall tile
-//    private boolean free(float px, float py) {
-//        float left = px + HB_X,  right = left + HB_W;
-//        float bottom = py + HB_Y, top = bottom + HB_H;
-//        return !maze.isSolid(left, bottom)  && !maze.isSolid(right, bottom)
-//            && !maze.isSolid(left, top)     && !maze.isSolid(right, top);
-//
-//    }
 
     /**
      * Tests whether the player's collision rectangle may occupy a proposed
@@ -221,10 +192,10 @@ public class Player {
      */
     private boolean free(float px, float py) {
         return maze.isAreaFree(
-            px + HB_X,
-            py + HB_Y,
-            HB_W,
-            HB_H
+            px + HITBOX_OFFSET_X,
+            py + HITBOX_OFFSET_Y,
+            HITBOX_WIDTH,
+            HITBOX_HEIGHT
         );
     }
 
