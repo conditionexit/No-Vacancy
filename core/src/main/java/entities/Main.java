@@ -187,7 +187,6 @@ public class Main extends ScreenAdapter {
                 trap.update(dt, player.x + Player.HB_X, player.y + Player.HB_Y,
                     Player.HB_W, Player.HB_H, trapDamageReceiver);
             }
-            trapRenderer.update(dt);
             if (key != null && !key.isCollected()) {
                 float dx = player.x + Player.W / 2 - key.getX();
                 float dy = player.y + Player.H / 2 - key.getY();
