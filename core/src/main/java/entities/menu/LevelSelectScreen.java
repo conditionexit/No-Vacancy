@@ -1,6 +1,6 @@
 package entities.menu;
 
-import entities.NoVacancyGame;
+import entities.Main;
 
 /**
  * Lists every level in {@link LevelRegistry}; locked levels (see {@link SaveData}) are
@@ -9,7 +9,7 @@ import entities.NoVacancyGame;
  */
 public final class LevelSelectScreen extends UiScreen {
 
-    public LevelSelectScreen(NoVacancyGame game) {
+    public LevelSelectScreen(Main game) {
         super(game);
     }
 

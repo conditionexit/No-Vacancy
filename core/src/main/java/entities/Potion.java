@@ -8,7 +8,7 @@ package entities;
  *
  * @author Mahammad Jafarli
  * @see Player
- * @see Main
+ * @see GameScreen
  */
 public class Potion {
     private final float x;
@@ -38,7 +38,7 @@ public class Potion {
     }
 
     /** @return {@code true} if this potion has already been consumed */
-    public boolean isConcumed(){
+    public boolean isConsumed(){
         return consumed;
     }
 

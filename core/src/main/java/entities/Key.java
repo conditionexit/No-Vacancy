@@ -8,7 +8,7 @@ package entities;
  *
  * @author Yusif
  * @see Maze
- * @see Main
+ * @see GameScreen
  */
 public class Key {
     private final float x;

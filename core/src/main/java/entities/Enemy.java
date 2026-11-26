@@ -2,12 +2,13 @@ package entities;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Vector2;
 
 /**
  * A maze-bound hostile character that pursues the player within a limited
  * detection radius and otherwise returns to its original spawn location.
  *
- * <p>Each enemy shares a texture supplied and owned by {@link Main}; it must
+ * <p>Each enemy shares a texture supplied and owned by {@link GameScreen}; it must
  * therefore not dispose that texture. Movement uses Euclidean distance to
  * produce a direction vector of unit length, then limits one frame's travel
  * to the remaining distance to avoid overshooting its target. Like
@@ -17,6 +18,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
  *
  * @see Player
  * @see Maze
+ * @see Movement
  */
 public class Enemy {
     public static final float W = 32f, H = 58f;     // sprite size
@@ -27,14 +29,14 @@ public class Enemy {
 
     public float x, y;                              // sprite bottom-left
     private final float homeX, homeY;
-    private final Texture tex;                      // shared texture, owned (and disposed) by Main
+    private final Texture tex;                      // shared texture, owned (and disposed) by GameScreen
 
 
     // For initial testing, we are using a rectangle slightly narrower than the sprite
-    private static final float HB_X = 6f;
-    private static final float HB_Y = 6f;
-    private static final float HB_W = 20f;
-    private static final float HB_H = 46f;
+    private static final float HITBOX_OFFSET_X = 6f;
+    private static final float HITBOX_OFFSET_Y = 6f;
+    private static final float HITBOX_WIDTH = 20f;
+    private static final float HITBOX_HEIGHT = 46f;
 
     /**
      * Creates an enemy at its home position.
@@ -44,7 +46,7 @@ public class Enemy {
      * @param y initial sprite bottom-left y-coordinate; also the y-coordinate
      *          to which the enemy returns when the player is out of range
      * @param tex shared texture used to render this enemy; ownership remains
-     *            with the caller, normally {@link Main}
+     *            with the caller, normally {@link GameScreen}
      * @param maze maze used for hitbox collision checks
      */
     public Enemy(float x, float y, Texture tex, Maze maze) {
@@ -84,10 +86,10 @@ public class Enemy {
      */
     private boolean free(float px, float py) {
         return maze.isAreaFree(
-            px + HB_X,
-            py + HB_Y,
-            HB_W,
-            HB_H
+            px + HITBOX_OFFSET_X,
+            py + HITBOX_OFFSET_Y,
+            HITBOX_WIDTH,
+            HITBOX_HEIGHT
         );
     }
 
@@ -124,9 +126,10 @@ public class Enemy {
      * remaining straight-line distance.
      *
      * <p>The per-frame travel is capped at {@code dist}, which prevents a
-     * large delta time from carrying the enemy past the target. The resulting
-     * vector is split into eight-pixel increments, then each x and y
-     * component is accepted independently when its hitbox remains free.</p>
+     * large delta time from carrying the enemy past the target. Scaling and
+     * substep collision sliding are delegated to {@link Movement#scaleDirection}
+     * and {@link Movement#moveWithSlide} using this enemy's hitbox check
+     * ({@link #free(float, float)}).</p>
      *
      * @param tx target x-coordinate in world pixels
      * @param ty target y-coordinate in world pixels
@@ -137,24 +140,10 @@ public class Enemy {
         if (dist <= 0f) return;
 
         float movement = Math.min(SPEED * dt, dist);
-
-        float dx = (tx - x) / dist * movement;
-        float dy = (ty - y) / dist * movement;
-
-        float maxStep = 8f;
-
-        int steps = Math.max(
-            1,
-            (int) Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / maxStep)
-        );
-
-        float stepX = dx / steps;
-        float stepY = dy / steps;
-
-        for (int i = 0; i < steps; i++) {
-            if (free(x + stepX, y)) x += stepX;
-            if (free(x, y + stepY)) y += stepY;
-        }
+        Vector2 delta = Movement.scaleDirection(tx - x, ty - y, movement);
+        Vector2 next = Movement.moveWithSlide(x, y, delta.x, delta.y, this::free);
+        x = next.x;
+        y = next.y;
     }
 
     /**
