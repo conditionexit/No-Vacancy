@@ -4,22 +4,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 
-/**
- * A maze-bound hostile character that pursues the player within a limited
- * detection radius and otherwise returns to its original spawn location.
- *
- * <p>Each enemy shares a texture supplied and owned by {@link GameScreen}; it must
- * therefore not dispose that texture. Movement uses Euclidean distance to
- * produce a direction vector of unit length, then limits one frame's travel
- * to the remaining distance to avoid overshooting its target. Like
- * {@link Player}, it uses a smaller collision hitbox, short movement
- * substeps, and independent axis checks so collision remains reliable and
- * permits sliding along walls.</p>
- *
- * @see Player
- * @see Maze
- * @see Movement
- */
+/** An enemy that chases the player nearby and returns to its spawn. */
 public class Enemy {
     public static final float W = 32f, H = 58f;     // sprite size
     static final float SPEED = 60f;
@@ -38,17 +23,7 @@ public class Enemy {
     private static final float HITBOX_WIDTH = 20f;
     private static final float HITBOX_HEIGHT = 46f;
 
-    /**
-     * Creates an enemy at its home position.
-     *
-     * @param x initial sprite bottom-left x-coordinate; also the x-coordinate
-     *          to which the enemy returns when the player is out of range
-     * @param y initial sprite bottom-left y-coordinate; also the y-coordinate
-     *          to which the enemy returns when the player is out of range
-     * @param tex shared texture used to render this enemy; ownership remains
-     *            with the caller, normally {@link GameScreen}
-     * @param maze maze used for hitbox collision checks
-     */
+    /** Creates an enemy. The texture is shared and owned by GameScreen. */
     public Enemy(float x, float y, Texture tex, Maze maze) {
         this.x = x;
         this.y = y;
@@ -58,32 +33,13 @@ public class Enemy {
         this.maze = maze;
     }
 
-    /**
-     * Computes the Euclidean distance from this enemy's sprite origin to a
-     * world position.
-     *
-     * <p>The same distance is used for detection, stopping thresholds, and
-     * normalization of a movement direction, ensuring those decisions use a
-     * consistent measure.</p>
-     *
-     * @param px target x-coordinate in world pixels
-     * @param py target y-coordinate in world pixels
-     * @return straight-line distance to the target, in world pixels
-     */
+    /** Returns the distance from the enemy to a position. */
     public float distanceTo(float px, float py) {
         float dx = px - x, dy = py - y;
         return (float) Math.sqrt(dx * dx + dy * dy);
     }
 
-    /**
-     * Tests whether the enemy's narrower collision hitbox may occupy a
-     * proposed sprite position.
-     *
-     * @param px proposed sprite bottom-left x-coordinate
-     * @param py proposed sprite bottom-left y-coordinate
-     * @return {@code true} if the hitbox fits inside the maze without touching
-     *         a wall tile
-     */
+    /** Checks whether the enemy hitbox fits at this position. */
     private boolean free(float px, float py) {
         return maze.isAreaFree(
             px + HITBOX_OFFSET_X,
@@ -93,20 +49,7 @@ public class Enemy {
         );
     }
 
-    /**
-     * Updates chase or return-to-home movement for one frame.
-     *
-     * <p>If the player is closer than {@link #CHASE_RANGE}, the enemy moves
-     * toward the player but stops inside {@link #STOP_DIST}. The stopping
-     * distance prevents jitter and repeated attempts to occupy the exact same
-     * point. When the player leaves the detection range, the enemy instead
-     * returns to its recorded home position, with a small tolerance to avoid
-     * imperceptible correction movement at the destination.</p>
-     *
-     * @param dt elapsed time since the previous frame, in seconds
-     * @param playerX player's sprite-origin x-coordinate in world pixels
-     * @param playerY player's sprite-origin y-coordinate in world pixels
-     */
+    /** Chases the player in range; otherwise returns home. */
     public void update(float dt, float playerX, float playerY) {
         float d = distanceTo(playerX, playerY);
         if (d < CHASE_RANGE) {
@@ -121,21 +64,7 @@ public class Enemy {
         }
     }
 
-    /**
-     * Moves toward a target while respecting speed, collision, and the
-     * remaining straight-line distance.
-     *
-     * <p>The per-frame travel is capped at {@code dist}, which prevents a
-     * large delta time from carrying the enemy past the target. Scaling and
-     * substep collision sliding are delegated to {@link Movement#scaleDirection}
-     * and {@link Movement#moveWithSlide} using this enemy's hitbox check
-     * ({@link #free(float, float)}).</p>
-     *
-     * @param tx target x-coordinate in world pixels
-     * @param ty target y-coordinate in world pixels
-     * @param dist already-computed Euclidean distance to the target
-     * @param dt elapsed time since the previous frame, in seconds
-     */
+    /** Moves in small steps to prevent crossing walls and allow sliding. */
     private void moveToward(float tx, float ty, float dist, float dt) {
         if (dist <= 0f) return;
 
@@ -146,23 +75,12 @@ public class Enemy {
         y = next.y;
     }
 
-    /**
-     * Returns the row used to interleave this enemy with maze rows during
-     * drawing.
-     *
-     * @param tileHeight height of a maze tile in world pixels
-     * @return zero-based row containing the enemy sprite origin
-     */
+    /** Returns the map row used for drawing. */
     public int row(float tileHeight) {
         return (int) (y / tileHeight);
     }
 
-    /**
-     * Draws this enemy with the shared texture.
-     *
-     * @param batch active sprite batch configured with the game camera's
-     *              projection matrix
-     */
+    /** Draws the enemy using the shared texture. */
     public void draw(SpriteBatch batch) {
         batch.draw(tex, x, y, W, H);
     }

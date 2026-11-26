@@ -2,16 +2,6 @@
 
 Məqsəd kodun müəllifini müəyyənləşdirmək deyil: kodun AI ilə yazıldığını təkcə görünüşünə görə demək olmaz. Burada komandanın daha rahat izah edə biləcəyi konkret sadələşdirmə namizədləri qeyd edilib. Mənbə kodu dəyişdirilməyib. Sətirlər hazırkı versiyaya aiddir.
 
-## Əvvəlcə edilə bilənlər
-
-1. **Köhnə kod bloklarını təmizləmək — aşağı risk.** `core/src/main/java/entities/NoVacancyGame.java:1`–`94` aktiv sinfin əvvəlki versiyasının bütöv şərhə alınmış surətidir. `core/src/main/java/entities/Player.java:152`–`156` və `:200`–`207` də köhnə hərəkət/toqquşma kodudur. Bunları silmək işləyən kodu dəyişmir; tarixçəyə ehtiyac varsa Git-də qalır. Silməzdən əvvəl komandanın saxlamaq istədiyi qeydləri yoxlayın.
-
-2. **Uzun və özünü təkrarlayan şərhləri qısaltmaq — aşağı risk.** Məsələn, `entities/Enemy.java:39`, `:59`, `:94`, `:122` və `entities/Main.java:19`, `:77`, `:141` ətrafında sadə əməliyyatlara aid uzun Javadoc blokları var. Bir-iki cümlə ilə məqsədi yazmaq, xüsusilə qeyri-aşkar səbəbləri (məsələn, teksturanın kim tərəfindən azad edilməsi və kiçik hərəkət addımları) saxlamaq kifayətdir. Müəllif qeydlərini komandanın istəyinə uyğun qoruyun.
-
-3. **`Main.render` metodunu mərhələlərə ayırmaq — orta risk.** `entities/Main.java:156`–`250` giriş, pauza, düşmənlər, tələlər, əşyalar, kamera və çəkməni bir yerdə edir. Eyni sinifdə `updateEnemies(dt)`, `updateTraps(dt)`, `collectItems()` və `drawWorld()` kimi bir neçə sadə metodla ardıcıllığı görünən etmək olar. Açar və iksirin `dx`, `dy`, məsafə yoxlamaları (`:192`–`209`) üçün kiçik ortaq məsafə metodu təkrarı azaldar; iksirin yalnız can az olanda götürülməsi qorunmalıdır. Pauza, yenidən başlama və sətir üzrə çəkmə sırası dəyişməməlidir.
-
-4. **Oyunçunun hərəkətini oxunaqlı mərhələlərə bölmək — orta risk.** `entities/Player.java:114`–`150` düymələri, istiqaməti, animasiyanı, səsi və toqquşmanı birləşdirir. Giriş/istiqamət və hərəkət/toqquşma üçün sadə adlı metodlar ayırmaq mümkündür. `dx`/`dy` hesabını adi `if`-lərlə yazmaq üçlü operatorları izah etməyi də asanlaşdıra bilər. Diaqonal sürətin normallaşdırılmasını, 8 piksellik kiçik addımları və oxlar üzrə ayrıca toqquşmanı saxlayın: bunlar divardan keçmənin və divar boyunca sürüşmənin davranışına təsir edir.
-
 ## Daha diqqətlə baxılacaq hissələr
 
 5. **Menyu girişini iki yerə ayırmaq — orta risk.** `entities/menu/UiScreen.java:307`–`355` siçan, sürüşdürmə, klaviatura və geri qayıtmanı bir metodda idarə edir. Eyni sinifdə `handleMouse()` və `handleKeyboard()` kimi iki metod izahı asanlaşdıra bilər. Widget aktivləşdirildikdə erkən `return`, yalnız siçan hərəkət edəndə fokusun dəyişməsi, sürüşdürmənin buraxılması və deaktiv elementlərin ötürülməsi saxlanmalıdır. Bütün menyularda siçan, klaviatura və səs slayderlərini yoxlamaq lazımdır.

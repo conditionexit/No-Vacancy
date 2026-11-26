@@ -87,7 +87,7 @@ public class Player {
     /**
      * Puts the player back at the maze's player spawn point.
      *
-     * <p>The spawn object's x-coordinate is treated as the sprite centre,
+     * <p>The spawn object's x-coordinate is treated as the sprite center,
      * whereas its y-coordinate is used as the sprite bottom. This matches the
      * map-placement convention used by the game.</p>
      */
@@ -113,28 +113,41 @@ public class Player {
      *
      * @param dt elapsed time since the previous frame, in seconds
      */
+
     public void update(float dt) {
         hitCooldown = Math.max(0f, hitCooldown - dt);
-        // input
-        float dx = (Gdx.input.isKeyPressed(Input.Keys.D) ? 1 : 0) - (Gdx.input.isKeyPressed(Input.Keys.A) ? 1 : 0);
-        float dy = (Gdx.input.isKeyPressed(Input.Keys.W) ? 1 : 0) - (Gdx.input.isKeyPressed(Input.Keys.S) ? 1 : 0);
-        moving = dx != 0 || dy != 0;
 
-        // facing direction + animation time
-        if (Gdx.input.isKeyPressed(Input.Keys.W))      dir = 3;
-        else if (Gdx.input.isKeyPressed(Input.Keys.S)) dir = 0;
-        else if (Gdx.input.isKeyPressed(Input.Keys.A)) dir = 1;
-        else if (Gdx.input.isKeyPressed(Input.Keys.D)) dir = 2;
+        Vector2 input = readMovementInput();
+        moving = input.x != 0 || input.y != 0;
 
-        if (moving) stateTime += dt; else stateTime = 0;
-
+        updateDirection();
+        updateAnimation(dt);
         updateStepSound();
-
-        Vector2 delta = Movement.scaleDirection(dx, dy, SPEED * dt);
-        Vector2 next = Movement.moveWithSlide(x, y, delta.x, delta.y, this::free);
-        x = next.x;
-        y = next.y;
+        movePlayer(input.x, input.y, dt);
     }
+
+//    public void update(float dt) {
+//        hitCooldown = Math.max(0f, hitCooldown - dt);
+//        // input
+//        float dx = (Gdx.input.isKeyPressed(Input.Keys.D) ? 1 : 0) - (Gdx.input.isKeyPressed(Input.Keys.A) ? 1 : 0);
+//        float dy = (Gdx.input.isKeyPressed(Input.Keys.W) ? 1 : 0) - (Gdx.input.isKeyPressed(Input.Keys.S) ? 1 : 0);
+//        moving = dx != 0 || dy != 0;
+//
+//        // facing direction + animation time
+//        if (Gdx.input.isKeyPressed(Input.Keys.W))      dir = 3;
+//        else if (Gdx.input.isKeyPressed(Input.Keys.S)) dir = 0;
+//        else if (Gdx.input.isKeyPressed(Input.Keys.A)) dir = 1;
+//        else if (Gdx.input.isKeyPressed(Input.Keys.D)) dir = 2;
+//
+//        if (moving) stateTime += dt; else stateTime = 0;
+//
+//        updateStepSound();
+//
+//        Vector2 delta = Movement.scaleDirection(dx, dy, SPEED * dt);
+//        Vector2 next = Movement.moveWithSlide(x, y, delta.x, delta.y, this::free);
+//        x = next.x;
+//        y = next.y;
+//    }
 
     /**
      * Synchronizes the looping footstep sound with the current movement flag.
@@ -152,6 +165,46 @@ public class Player {
         }
     }
 
+    private Vector2 readMovementInput() {
+        float dx = 0;
+        float dy = 0;
+
+        if (Gdx.input.isKeyPressed(Input.Keys.D)) dx++;
+        if (Gdx.input.isKeyPressed(Input.Keys.A)) dx--;
+        if (Gdx.input.isKeyPressed(Input.Keys.W)) dy++;
+        if (Gdx.input.isKeyPressed(Input.Keys.S)) dy--;
+
+        return new Vector2(dx, dy);
+    }
+
+    private void updateDirection() {
+        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+            dir = 3;
+        } else if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+            dir = 0;
+        } else if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+            dir = 1;
+        } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+            dir = 2;
+        }
+    }
+
+    private void updateAnimation(float dt) {
+        if (moving) {
+            stateTime += dt;
+        } else {
+            stateTime = 0;
+        }
+    }
+
+    private void movePlayer(float dx, float dy, float dt) {
+        Vector2 delta = Movement.scaleDirection(dx, dy, SPEED * dt);
+        Vector2 next = Movement.moveWithSlide(x, y, delta.x, delta.y, this::free);
+
+        x = next.x;
+        y = next.y;
+    }
+
     /**
      * Draws the current directional animation frame at the player's world
      * position.
@@ -161,7 +214,16 @@ public class Player {
      */
     public void draw(SpriteBatch batch) {
         Shadow.draw(batch, x + W / 2f, y + HITBOX_OFFSET_Y + 2f, 26f, 10f);
+
+        boolean blinking = hitCooldown >0 && (int) (hitCooldown / 0.15f) % 2 == 0; // 0.15 is the blinking speed
+
+        if(blinking) {
+            batch.setColor(1f,1f,1f, 0.35f); // 0.35 is opacity
+        }
+
         batch.draw(walk[dir].getKeyFrame(stateTime), x, y, W, H);
+
+        batch.setColor(1f,1f,1f,1f);
     }
 
     /**
@@ -176,15 +238,6 @@ public class Player {
     public int feetRow() {
         return (int) ((y + HITBOX_OFFSET_Y) / maze.tileHeight());
     }
-
-    // true if the hitbox at (px, py) touches no wall tile
-//    private boolean free(float px, float py) {
-//        float left = px + HB_X,  right = left + HB_W;
-//        float bottom = py + HB_Y, top = bottom + HB_H;
-//        return !maze.isSolid(left, bottom)  && !maze.isSolid(right, bottom)
-//            && !maze.isSolid(left, top)     && !maze.isSolid(right, top);
-//
-//    }
 
     /**
      * Tests whether the player's collision rectangle may occupy a proposed
@@ -218,7 +271,7 @@ public class Player {
         stepSound.dispose();
     }
 
-    public static final int MAX_LIVES = 3;
+    public static final int MAX_LIVES = 6;
     private int lives = MAX_LIVES;
     private float hitCooldown = 0f;     // invincibility time after a hit
 
@@ -236,7 +289,7 @@ public class Player {
     public boolean takeDamage() {
         if (hitCooldown > 0) return false;
         lives--;
-        hitCooldown = 1.5f;
+        hitCooldown = 2f; // 2 seconds before you can get hit again
         return true;
     }
 

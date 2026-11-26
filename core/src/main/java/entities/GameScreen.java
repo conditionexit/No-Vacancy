@@ -16,28 +16,12 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import java.util.function.IntPredicate;
 
 /**
- * Gameplay screen for a single maze-escape level.
- *
- * <p>Each {@link #render(float)} frame advances simulation, then draws the
- * scene in depth-aware row order: ground first, then map rows from top to
- * bottom with enemy and player sprites interleaved before the wall/decor
- * layer so that foreground tiles can partially cover actors.</p>
- *
- * <p><b>Resource ownership:</b> the shared enemy texture is owned and
- * disposed here. {@link Maze}, {@link Player}, and {@link Hud} each own
- * their own disposable resources and are released from
- * {@link #dispose()}.</p>
+ * Runs the gameplay screen and draws the maze, characters and HUD.
+ * The enemy texture is shared and disposed by this screen.
  *
  * @author Fuad Jafarli
- * @implNote Originally developed by Fuad Jafarli; subsequently modified by
- *           Mahammad and Islam.
- * @implNote Key collection and HUD feedback added by Yusif.
+ * @implNote Modified by Mahammad and Islam; key and HUD feedback added by Yusif.
  * @implNote Potion collection and health restoration added by Mahammad.
- * @see Main
- * @see Maze
- * @see Player
- * @see Enemy
- * @see Potion
  */
 public class GameScreen extends ScreenAdapter {
     OrthographicCamera camera = new OrthographicCamera();
@@ -60,25 +44,13 @@ public class GameScreen extends ScreenAdapter {
     private final Main game;
     private final String levelFile;
 
-    /**
-     * Creates the gameplay screen for one level. {@link Main} is the application
-     * entry point; this class is the screen it shows while a level is being played.
-     *
-     * @param game      application, used for the shared audio settings and to return to the menu
-     * @param levelFile internal asset path of the TMX level to play
-     */
+    /** Creates a gameplay screen for the selected level. */
     public GameScreen(Main game, String levelFile) {
         this.game = game;
         this.levelFile = levelFile;
     }
 
-    /**
-     * Loads the TMX level and creates all game objects for it.
-     *
-     * <p>Enemy spawn points are map-centre coordinates; they are converted
-     * to sprite bottom-left by subtracting half the sprite size so the
-     * enemy appears centred on its spawn marker.</p>
-     */
+    /** Loads the level and creates its game objects. */
     @Override
     public void show() {
         batch = new SpriteBatch();
@@ -125,14 +97,7 @@ public class GameScreen extends ScreenAdapter {
     @Override
     public void resize(int w, int h) { viewport.update(w, h); }
 
-    /**
-     * Advances one frame of gameplay and renders the world and HUD.
-     *
-     * <p>Rendering order: ground tiles, traps, then map rows from top to
-     * bottom with actors interleaved before each wall/decor row so that
-     * foreground tiles can partially cover sprites. The HUD is drawn last,
-     * screen-facing and unobscured.</p>
-     */
+    /** Updates the game and draws one frame. */
     @Override
     public void render(float delta) {
         // Clear every frame first, so a failed map load produces a black window.
@@ -212,19 +177,25 @@ public class GameScreen extends ScreenAdapter {
     private void updateSimulation(float dt){
         if (Gdx.input.isKeyJustPressed(Input.Keys.R)) restartLevel();
         player.update(dt);
-        for (Enemy e : enemies) {
-            e.update(dt, player.x, player.y);
-            if (e.distanceTo(player.x, player.y) < 24f) player.takeDamage();
+        updateEnemies(dt);
+        updateTraps(dt);
+        collectItems();
+
+        if (player.isDead()) restartLevel();
+    }
+
+    private void updateEnemies(float dt) {
+        for (Enemy enemy : enemies) {
+            enemy.update(dt, player.x, player.y);
+            if (enemy.distanceTo(player.x, player.y) < 24f) player.takeDamage();
         }
+    }
+
+    private void updateTraps(float dt) {
         for (Trap trap : maze.traps) {
             trap.update(dt, player.x + Player.HITBOX_OFFSET_X, player.y + Player.HITBOX_OFFSET_Y,
                 Player.HITBOX_WIDTH, Player.HITBOX_HEIGHT, trapDamageReceiver);
         }
-
-        checkKeyCollection();
-        checkPotionCollection();
-
-        if (player.isDead()) restartLevel();
     }
 
     /**
@@ -260,13 +231,7 @@ public class GameScreen extends ScreenAdapter {
         if (player != null) player.stopFootsteps();
     }
 
-    /**
-     * Centres the camera on the player as far as map bounds permit.
-     *
-     * <p>Clamping the target centre to half a viewport width/height from each
-     * edge prevents empty space outside the maze from becoming visible while
-     * still allowing normal tracking in the map interior.</p>
-     */
+    /** Keeps the camera on the player within the maze bounds. */
     private void updateCamera() {
         camera.position.set(
             MathUtils.clamp(player.x + Player.W / 2, camera.viewportWidth / 2, maze.pixelWidth() - camera.viewportWidth / 2),
@@ -274,29 +239,21 @@ public class GameScreen extends ScreenAdapter {
         camera.update();
     }
 
-    /** Collects the key if the player's centre is within pickup radius. */
-    private void checkKeyCollection(){
-        if (key != null && !key.isCollected()) {
-            float dx = player.x + Player.W / 2 - key.getX();
-            float dy = player.y + Player.H / 2 - key.getY();
-            if (dx * dx + dy * dy < 24f * 24f) {
-                key.collect();
-            }
+    private void collectItems() {
+        if (key != null && !key.isCollected() && isNearPlayer(key.getX(), key.getY())) {
+            key.collect();
+        }
+        if (potion != null && !potion.isConsumed() && isNearPlayer(potion.getX(), potion.getY())
+            && player.getLives() < Player.MAX_LIVES) {
+            potion.consume();
+            player.heal();
         }
     }
 
-    /** Consumes the potion and heals the player if within pickup radius and not at full health. */
-    private void checkPotionCollection(){
-        if(potion != null && !potion.isConsumed()) {
-            float dx = player.x + Player.W / 2 - potion.getX();
-            float dy = player.y + Player.H / 2 - potion.getY();
-            if (dx * dx + dy * dy < 24f * 24f) {
-                if(player.getLives() < Player.MAX_LIVES){
-                    potion.consume();
-                    player.heal();
-                }
-            }
-        }
+    private boolean isNearPlayer(float x, float y) {
+        float dx = player.x + Player.W / 2 - x;
+        float dy = player.y + Player.H / 2 - y;
+        return dx * dx + dy * dy < 24f * 24f;
     }
 
     /**
