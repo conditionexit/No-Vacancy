@@ -1,49 +1,54 @@
 package entities;
 
-/**
- * A positioned hazard that deals a fixed amount of damage when triggered.
- *
- * <p>This class stores trap data; collision detection and applying damage are
- * handled by the game logic.</p>
- * @author Zarifa
- */
 import java.util.Objects;
 import java.util.function.IntPredicate;
+/**
+ * A proximity-triggered spike trap that starts hidden.
+ * When the player's feet enter the trigger area, the spikes rise,
+ * stay fully extended briefly, then retract and disappear.
+ * The trap deals damage at most once per activation, while fully
+ * extended and overlapping the player's feet hitbox.
+ * After a cooldown, it can activate again.
+ *
+ * @author Zarifa
+ */
 
-/** A stationary rectangular hazard, independent of hearts, HP, input and rendering. */
 public final class Trap {
     public static final int DEFAULT_DAMAGE = 10;
     public static final float DEFAULT_COOLDOWN = 1f;
-    private static final int MAX_HITS_PER_UPDATE = 8;
-    private long resetGeneration;
+
+    private static final float HIDDEN = 1.2f;
+    private static final float RISE = 0.08f;
+    private static final float OUT = 0.8f;
+    private static final float FALL = 0.2f;
+    private static final float TRIGGER_PADDING = 25f;
+
+    private enum State { HIDDEN, RISE, OUT, FALL }
 
     private final float x, y, width, height;
     private final int damage;
     private final float cooldown;
-    private double remaining;
-    private boolean touching;
 
-    /**
-     * Creates a trap with a positive damage value.
-     *
-     * @param x trap x-coordinate in world pixels
-     * @param y trap y-coordinate in world pixels
-     * @param damage damage dealt when triggered; must be greater than zero
-     * @throws IllegalArgumentException if {@code damage} is not positive
-     */
-    /** Preserves the original constructor; its collision size defaults to one 32-pixel tile. */
+    private State state = State.HIDDEN;
+    private double stateTime;
+    private double hiddenRemaining;
+    private boolean hitThisCycle;
+    private long resetGeneration;
+
     public Trap(float x, float y, int damage) {
         this(x, y, 32f, 32f, damage, DEFAULT_COOLDOWN);
     }
 
-    /** Creates a map-positioned trap; cooldown is measured in gameplay seconds. */
     public Trap(float x, float y, float width, float height, int damage, float cooldown) {
         if (!Float.isFinite(x) || !Float.isFinite(y)
             || !Float.isFinite(width) || width <= 0
             || !Float.isFinite(height) || height <= 0
             || damage <= 0 || !Float.isFinite(cooldown) || cooldown <= 0) {
-            throw new IllegalArgumentException("Trap needs finite coordinates, positive size, damage and cooldown");
+            throw new IllegalArgumentException(
+                "Trap needs finite coordinates, positive size, damage and cooldown"
+            );
         }
+
         this.x = x;
         this.y = y;
         this.width = width;
@@ -52,38 +57,29 @@ public final class Trap {
         this.cooldown = cooldown;
     }
 
-    /** @return trap x-coordinate in world pixels */
-    public float getX() {
-        return x;
-    }
-
-    /** @return trap y-coordinate in world pixels */
-    public float getY() {
-        return y;
-    }
-
-    /** @return damage dealt when the trap is triggered */
-    public int getDamage() {
-        return damage;
-    }
-
-    /** Tests actual hitbox intersection; merely touching edges does not count. */
     public boolean overlaps(float px, float py, float pw, float ph) {
+        return overlaps(px, py, pw, ph, 0f);
+    }
+
+    private boolean overlaps(float px, float py, float pw, float ph, float padding) {
         double offsetX = (double) px - x;
         double offsetY = (double) py - y;
 
         return pw > 0 && ph > 0
-            && offsetX < width && offsetX > -pw
-            && offsetY < height && offsetY > -ph;
+            && offsetX < width + padding && offsetX > -pw - padding
+            && offsetY < height + padding && offsetY > -ph - padding;
     }
 
-    /**
-     * Advances only gameplay time and delivers due hits while overlapping.
-     * The receiver handles health and returns false when it cannot accept a hit
-     * (for example, after death). Call this only during active, unpaused play.
-     * Leaving stops damage but does not bypass an outstanding cooldown.
-     * Long continuous-contact frames retain elapsed cooldown intervals.
-     */
+    // -1 tells the renderer to skip this trap entirely.
+    int frameIndex() {
+        return switch (state) {
+            case HIDDEN -> -1;
+            case RISE -> Math.min(3, 1 + (int) (stateTime / RISE));
+            case OUT -> 3;
+            case FALL -> Math.max(0, 2 - (int) (stateTime / FALL));
+        };
+    }
+
     public void update(float dt, float px, float py, float pw, float ph,
                        IntPredicate receiveDamage) {
         if (!Float.isFinite(dt) || dt < 0) {
@@ -91,49 +87,58 @@ public final class Trap {
         }
         Objects.requireNonNull(receiveDamage, "receiveDamage");
 
-        remaining -= dt;
-        if (!overlaps(px, py, pw, ph)) {
-            remaining = Math.max(0, remaining);
-            touching = false;
+        if (state == State.HIDDEN) {
+            hiddenRemaining = Math.max(0, hiddenRemaining - dt);
+
+            if (hiddenRemaining == 0 && overlaps(px, py, pw, ph, TRIGGER_PADDING)) {
+                state = State.RISE;
+                stateTime = 0;
+                hitThisCycle = false;
+            }
             return;
         }
 
-        if (!touching) {
-            remaining = Math.max(0, remaining);
-        }
-        touching = true;
+        stateTime += dt;
 
-        for (int hits = 0; hits < MAX_HITS_PER_UPDATE && remaining <= 0; hits++) {
-            long generationBeforeHit = resetGeneration;
-            boolean accepted = receiveDamage.test(damage);
-
-            if (resetGeneration != generationBeforeHit) {
-                return;
-            }
-
-            if (!accepted) {
-                remaining = 0;
-                return;
-            }
-
-            remaining += cooldown;
+        if (state == State.RISE && stateTime >= 2.0 * RISE) {
+            stateTime -= 2.0 * RISE;
+            state = State.OUT;
         }
 
-        if (remaining <= 0) {
-            // Drop excess overdue hits and start a fresh cooldown.
-            remaining = cooldown;
+        if (state == State.OUT) {
+            if (!hitThisCycle && overlaps(px, py, pw, ph)) {
+                long generationBeforeHit = resetGeneration;
+                boolean accepted = receiveDamage.test(damage);
+                if (resetGeneration != generationBeforeHit) return;
+                hitThisCycle = accepted;
+            }
+
+            if (stateTime >= OUT) {
+                stateTime -= OUT;
+                state = State.FALL;
+            }
+        }
+
+        if (state == State.FALL && stateTime >= 3.0 * FALL) {
+            double extraTime = stateTime - 3.0 * FALL;
+            hiddenRemaining = Math.max(0, Math.max(HIDDEN, cooldown) - extraTime);
+            stateTime = 0;
+            state = State.HIDDEN;
         }
     }
 
-
-    /** Restores the initial, immediately ready state on level restart. */
     public void reset() {
         resetGeneration++;
-        remaining = 0;
-        touching = false;
+        state = State.HIDDEN;
+        stateTime = 0;
+        hiddenRemaining = 0;
+        hitThisCycle = false;
     }
 
+    public float getX() { return x; }
+    public float getY() { return y; }
     public float getWidth() { return width; }
     public float getHeight() { return height; }
+    public int getDamage() { return damage; }
     public float getCooldown() { return cooldown; }
 }

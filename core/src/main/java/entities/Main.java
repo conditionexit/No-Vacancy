@@ -7,7 +7,6 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
@@ -54,7 +53,7 @@ public class Main extends ScreenAdapter {
     Texture keyTexture;
     Potion potion;
     Texture potionTexture;
-    private ShapeRenderer trapRenderer;
+    private TrapRenderer trapRenderer;
     private IntPredicate trapDamageReceiver;
     private boolean paused;
     private boolean applicationPaused;
@@ -95,7 +94,7 @@ public class Main extends ScreenAdapter {
 
         player = new Player(maze);
         trapDamageReceiver = amount -> player.takeTrapHit();
-        trapRenderer = new ShapeRenderer();
+        trapRenderer = new TrapRenderer();
 
         if (maze.keySpawns.size > 0) {
             Vector2 spawn = maze.keySpawns.first();
@@ -188,7 +187,6 @@ public class Main extends ScreenAdapter {
                 trap.update(dt, player.x + Player.HB_X, player.y + Player.HB_Y,
                     Player.HB_W, Player.HB_H, trapDamageReceiver);
             }
-
             if (key != null && !key.isCollected()) {
                 float dx = player.x + Player.W / 2 - key.getX();
                 float dy = player.y + Player.H / 2 - key.getY();
@@ -214,7 +212,7 @@ public class Main extends ScreenAdapter {
 
         maze.renderGround(camera);                                // floor
 
-        if (!maze.traps.isEmpty()) {
+        /*if (!maze.traps.isEmpty()) {
             trapRenderer.setProjectionMatrix(camera.combined);
             trapRenderer.begin(ShapeRenderer.ShapeType.Filled);
             trapRenderer.setColor(0.85f, 0.15f, 0.1f, 1f);
@@ -222,10 +220,11 @@ public class Main extends ScreenAdapter {
                 trapRenderer.rect(trap.getX(), trap.getY(), trap.getWidth(), trap.getHeight());
             }
             trapRenderer.end();
-        }
+        }*/
 
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
+        trapRenderer.draw(batch, maze.traps);
         int feetRow = player.feetRow();
         for (int row = maze.rows() - 1; row >= 0; row--) {        // top to bottom
             if (key != null && !key.isCollected()
