@@ -1,7 +1,7 @@
 package entities.menu;
 
 import display.DisplaySettings;
-import entities.NoVacancyGame;
+import entities.Main;
 
 /**
  * Audio and display settings: Master, Music and SFX volume sliders, a mute toggle,
@@ -15,7 +15,7 @@ import entities.NoVacancyGame;
  */
 public final class SettingsScreen extends UiScreen {
 
-    public SettingsScreen(NoVacancyGame game) {
+    public SettingsScreen(Main game) {
         super(game);
     }
 

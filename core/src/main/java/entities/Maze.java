@@ -25,7 +25,7 @@ import com.badlogic.gdx.utils.Array;
  * <p>The map supplies named {@code ground}, {@code walls}, {@code decor}, and
  * {@code objects} layers. Ground is rendered by the tiled-map renderer before
  * sprites, while walls and decor are drawn one row at a time by
- * {@link #drawRow(SpriteBatch, int)}. This ordering lets {@link Main} place
+ * {@link #drawRow(SpriteBatch, int)}. This ordering lets {@link GameScreen} place
  * players and enemies between rows, which gives tall wall tiles a natural
  * foreground effect. The objects layer contributes player and enemy spawn
  * locations and key positions in the TMX file's world-pixel coordinate
@@ -129,7 +129,7 @@ public class Maze {
             loaded = true;
 
         }catch(RuntimeException e) {
-            // Mark the maze unusable; Main.render() will leave the window black.
+            // Mark the maze unusable; GameScreen.render(float) will leave the window black.
             loaded = false;
 
             // Print the actual missing-file or malformed-map error to the console.
@@ -245,7 +245,7 @@ public class Maze {
     /**
      * Draws one wall row followed by the matching decor row.
      *
-     * <p>{@link Main} calls this while iterating rows from top to bottom and
+     * <p>{@link GameScreen} calls this while iterating rows from top to bottom and
      * inserts sprites at their corresponding rows. Drawing these opaque or
      * foreground tiles after a sprite in the same row allows them to occlude
      * the sprite where appropriate.</p>

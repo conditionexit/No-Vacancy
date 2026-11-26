@@ -30,7 +30,7 @@ class PlayerTest {
     }
 
     @Test
-    void appliesDamageOnContactThenRespectsCooldownAndReset() {
+    void damagesOncePerActivationAndCanActivateAfterReset() {
         Trap trap = new Trap(0, 0, 32, 32, 10, 1);
         AtomicInteger hits = new AtomicInteger();
 
@@ -38,7 +38,8 @@ class PlayerTest {
             hits.incrementAndGet();
             return true;
         });
-        trap.update(0.5f, 1, 1, 8, 8, damage -> {
+        assertEquals(0, hits.get());
+        trap.update(0.2f, 1, 1, 8, 8, damage -> {
             hits.incrementAndGet();
             return true;
         });
@@ -48,14 +49,19 @@ class PlayerTest {
             hits.incrementAndGet();
             return true;
         });
-        assertEquals(2, hits.get());
+        assertEquals(1, hits.get());
 
         trap.reset();
         trap.update(0, 1, 1, 8, 8, damage -> {
             hits.incrementAndGet();
             return true;
         });
-        assertEquals(3, hits.get());
+        assertEquals(1, hits.get());
+        trap.update(0.2f, 1, 1, 8, 8, damage -> {
+            hits.incrementAndGet();
+            return true;
+        });
+        assertEquals(2, hits.get());
     }
 
 }

@@ -164,3 +164,4 @@ Thumbs.db
 **/resource-config.json
 core/src/main/java/entities/Fruit.java
 assets/*.tiled-session
+/QA_REVIEW.md

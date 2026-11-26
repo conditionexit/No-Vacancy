@@ -20,6 +20,7 @@ import com.badlogic.gdx.utils.Array;
  * <p>This is the earlier map helper used by the original game implementation.
  * The loaded map owns its tile textures and should be released with
  * {@link #dispose()}.</p>
+ * @author Fuad
  *
  * @see GameObject
  */

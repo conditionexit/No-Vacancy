@@ -1,309 +1,138 @@
 package entities;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
-import com.badlogic.gdx.ScreenAdapter;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.badlogic.gdx.utils.viewport.Viewport;
-
-import java.util.function.IntPredicate;
+import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Screen;
+import entities.menu.AudioManager;
+import entities.menu.LevelRegistry;
+import entities.menu.LevelSelectScreen;
+import entities.menu.MenuScreen;
+import entities.menu.SaveData;
+import entities.menu.SettingsScreen;
 
 /**
- * libGDX application adapter that coordinates the maze-escape game loop.
+ * Application entry point and screen flow: main menu, level select, settings and the
+ * actual gameplay ({@link GameScreen}).
  *
- * <p>The adapter creates the map, player, enemies, HUD, rendering resources,
- * and camera. Every {@link #render()} call advances gameplay using libGDX
- * delta time, resolves enemy contact through {@link Player#takeDamage()},
- * resets a player who has exhausted all lives, tracks the player with a
- * clamped camera, and draws the scene in depth-aware row order. Ground is
- * rendered first; enemy and player sprites are interleaved with wall and
- * decor rows so foreground map tiles can cover actors.</p>
+ * <p>Screen changes are queued and applied at the start of the next frame, so a screen
+ * can safely request a change from inside its own {@code render} without being
+ * disposed while it is still drawing. The previous screen is disposed after the switch.
+ * The {@link AudioManager} and {@link SaveData} live as long as the application and
+ * are shared by every screen, so music keeps playing between menu and game.</p>
  *
- * <p>The shared enemy texture is owned and disposed here. {@link Maze},
- * {@link Player}, and {@link Hud} own their respective resources and are
- * released from {@link #dispose()}.</p>
+ * <p>Level switching: the game remembers which level is running ({@link #currentLevel()})
+ * and offers {@link #nextLevel()}, {@link #previousLevel()} and {@link #restartLevel()}.</p>
  *
- * @author Fuad Jafarli
- * @implNote Originally developed by Fuad Jafarli; subsequently modified by
- *           Mahammad and Islam.
- * @implNote Key collection and HUD feedback added by Yusif.
- * @implNote Potion collection and health restoration added by Mahammad.
- * @see Maze
- * @see Player
- * @see Enemy
- * @see Potion
+ * @see GameScreen
  */
-public class Main extends ScreenAdapter {
-    OrthographicCamera camera = new OrthographicCamera();
-    Viewport viewport = new FitViewport(640, 500, camera);
-    SpriteBatch batch;
+public class Main extends Game {
+    private AudioManager audio;
+    private SaveData save;
+    private Screen pending;
 
-    Maze maze;
-    Player player;
-    Array<Enemy> enemies = new Array<>();
-    Texture enemyTex;
-    Key key;
-    Texture keyTexture;
-    Potion potion;
-    Texture potionTexture;
-    private TrapRenderer trapRenderer;
-    private IntPredicate trapDamageReceiver;
-    private boolean paused;
-    private boolean applicationPaused;
-
-    private final NoVacancyGame game;
-    private final String levelFile;
-
-    /**
-     * Creates the gameplay screen for one level. {@link NoVacancyGame} is the application
-     * entry point; this class is now the screen it shows while a level is being played.
-     *
-     * @param game      application, used for the shared audio settings and to return to the menu
-     * @param levelFile internal asset path of the TMX level to play
-     */
-    public Main(NoVacancyGame game, String levelFile) {
-        this.game = game;
-        this.levelFile = levelFile;
-    }
-
-    /**
-     * Initializes game-owned resources after libGDX creates the application.
-     *
-     * <p>The method loads the TMX level, creates a player at its spawn,
-     * creates one enemy for every enemy-spawn object, and creates the HUD.
-     * Enemy spawn points are converted from map points to sprite bottom-left
-     * coordinates by subtracting half the sprite size. Nearest filtering keeps
-     * the shared enemy texture appropriate for pixel-art rendering.</p>
-     */
-    @Override
-    public void show() {
-        batch = new SpriteBatch();
-        game.audio().playMusic();
-
-        maze = new Maze(levelFile);
-        if(!maze.isLoaded()){
-            return;
-        }
-
-        player = new Player(maze);
-        trapDamageReceiver = amount -> player.takeTrapHit();
-        trapRenderer = new TrapRenderer();
-
-        if (maze.keySpawns.size > 0) {
-            Vector2 spawn = maze.keySpawns.first();
-            key = new Key(spawn.x, spawn.y);
-            keyTexture = new Texture("key.png");
-            keyTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
-        }
-
-        if(maze.potionSpawns.size > 0){
-            Vector2 potionSpawn = maze.potionSpawns.first();
-            potion = new Potion(potionSpawn.x, potionSpawn.y);
-            potionTexture = new Texture("potions/health potion 64 x 64.png");
-            potionTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
-        }
-
-        enemyTex = new Texture("enemy.png");
-        enemyTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
-        for (Vector2 s : maze.enemySpawns) {
-            enemies.add(new Enemy(
-                s.x - Enemy.W / 2,
-                s.y - Enemy.H / 2,
-                enemyTex,
-                maze
-            ));
-        }
-
-        hud = new Hud(640, 500);
-    }
-    Hud  hud;
-    /**
-     * Updates the fit viewport when the application window changes size.
-     *
-     * <p>{@link FitViewport} maintains the 640 by 500 virtual-world aspect
-     * ratio, adding letterboxing when necessary instead of stretching the
-     * game view.</p>
-     *
-     * @param w new back-buffer width in pixels
-     * @param h new back-buffer height in pixels
-     */
-    @Override
-    public void resize(int w, int h) { viewport.update(w, h); }
-
-    /**
-     * Advances one frame of gameplay and renders the world and HUD.
-     *
-     * <p>All movement receives the frame delta time, making its speed largely
-     * independent of frame rate. Enemy contact is measured using the existing
-     * origin-to-origin distance threshold; {@link Player#takeDamage()} then
-     * enforces the player's invincibility cooldown. A dead player is reset
-     * immediately after interaction processing.</p>
-     *
-     * <p>Rendering clears the frame, renders ground, then iterates map rows
-     * from top to bottom. Enemies and the player are inserted at their rows
-     * before the walls/decor row is drawn. The HUD is drawn after the world so
-     * it remains screen-facing and unobscured.</p>
-     */
-    @Override
-    public void render(float delta) {
-        // Clear every frame first, so a failed map load produces a black window.
-        Gdx.gl.glClearColor(0, 0, 0, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-        // Esc returns to the main menu (works even if the map failed to load).
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            game.showMenu();
-            return;
-        }
-
-        // create() returned before constructing player/enemies/HUD.
-        if (maze == null || !maze.isLoaded()) {
-            return;
-        }
-
-        float dt = Gdx.graphics.getDeltaTime();
-        player.setSfxVolume(game.audio().sfxVolume());   // follows the SFX/master/mute settings
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.P)) {
-            paused = !paused;
-            if (paused) player.stopFootsteps();
-        }
-
-        if (!paused && !applicationPaused) {
-            if (Gdx.input.isKeyJustPressed(Input.Keys.R)) restartLevel();
-            player.update(dt);
-            for (Enemy e : enemies) {
-                e.update(dt, player.x, player.y);
-                if (e.distanceTo(player.x, player.y) < 24f) player.takeDamage();
-            }
-            for (Trap trap : maze.traps) {
-                trap.update(dt, player.x + Player.HB_X, player.y + Player.HB_Y,
-                    Player.HB_W, Player.HB_H, trapDamageReceiver);
-            }
-            if (key != null && !key.isCollected()) {
-                float dx = player.x + Player.W / 2 - key.getX();
-                float dy = player.y + Player.H / 2 - key.getY();
-                if (dx * dx + dy * dy < 24f * 24f) {
-                    key.collect();
-                }
-            }
-
-            if(potion != null && !potion.isConcumed()) {
-                float dx = player.x + Player.W / 2 - potion.getX();
-                float dy = player.y + Player.H / 2 - potion.getY();
-                if (dx * dx + dy * dy < 24f * 24f) {
-                    if(player.getLives() < Player.MAX_LIVES){
-                        potion.consume();
-                        player.heal();
-                    }
-                }
-            }
-
-            if (player.isDead()) restartLevel();
-        }
-        updateCamera();
-
-        maze.renderGround(camera);                                // floor
-
-        /*if (!maze.traps.isEmpty()) {
-            trapRenderer.setProjectionMatrix(camera.combined);
-            trapRenderer.begin(ShapeRenderer.ShapeType.Filled);
-            trapRenderer.setColor(0.85f, 0.15f, 0.1f, 1f);
-            for (Trap trap : maze.traps) {
-                trapRenderer.rect(trap.getX(), trap.getY(), trap.getWidth(), trap.getHeight());
-            }
-            trapRenderer.end();
-        }*/
-
-        batch.setProjectionMatrix(camera.combined);
-        batch.begin();
-        trapRenderer.draw(batch, maze.traps);
-        int feetRow = player.feetRow();
-        for (int row = maze.rows() - 1; row >= 0; row--) {        // top to bottom
-            if (key != null && !key.isCollected()
-                && (int) (key.getY() / maze.tileHeight()) == row) {
-                batch.draw(keyTexture, key.getX() - 12, key.getY() - 12, 24, 24);
-            }
-
-            if(potion != null && !potion.isConcumed()
-                && (int) (potion.getY() / maze.tileHeight()) == row) {
-                batch.draw(potionTexture, potion.getX() - 12, potion.getY() - 12, 24, 24);
-            }
-
-            for (Enemy e : enemies) {
-                if (e.row(maze.tileHeight()) == row) e.draw(batch);
-            }
-            if (row == feetRow) player.draw(batch);               // player between rows
-            maze.drawRow(batch, row);
-        }
-
-        batch.end();
-        hud.draw(batch, player.getLives(), Player.MAX_LIVES, key != null && key.isCollected());
-    }
-
-    private void restartLevel() {
-        player.reset();
-        if (key != null) key.drop();        // levels are not required to contain a key or potion
-        if (potion != null) potion.drop();
-        for (Trap trap : maze.traps) trap.reset();
-    }
+    /** Index in {@link LevelRegistry} of the level being played, or -1 when in a menu. */
+    private int currentLevel = -1;
 
     @Override
-    public void pause() {
-        applicationPaused = true;
-        if (player != null) player.stopFootsteps();
+    public void create() {
+        audio = new AudioManager();
+        save = new SaveData();
+        audio.playMusic();
+        showMenu();
     }
+
+    /** @return shared audio settings and music */
+    public AudioManager audio() { return audio; }
+
+    /** @return shared save data */
+    public SaveData save() { return save; }
+
+    // ---------------------------------------------------------- navigation
+
+    public void showMenu() {
+        currentLevel = -1;
+        queue(new MenuScreen(this));
+    }
+
+    public void showLevelSelect() {
+        currentLevel = -1;
+        queue(new LevelSelectScreen(this));
+    }
+
+    public void showSettings() {
+        queue(new SettingsScreen(this));
+    }
+
+    /** "Start Game": begins at the first level. Unlocked levels are kept. */
+    public void startNewGame() {
+        startLevel(0);
+    }
+
+    /** "Continue": reopens the level the player last started. */
+    public void continueGame() {
+        startLevel(save.lastLevel());
+    }
+
+    /** Starts the level at {@code index} in {@link LevelRegistry} and remembers it for "Continue". */
+    public void startLevel(int index) {
+        if (!LevelRegistry.isValid(index)) return;
+        currentLevel = index;
+        save.recordStarted(index);
+        queue(new GameScreen(this, LevelRegistry.get(index).file));
+    }
+
+    // ------------------------------------------------------ level switcher
+
+    /** @return index of the running level, or -1 if no level is running */
+    public int currentLevel() { return currentLevel; }
+
+    public boolean hasNextLevel() {
+        return currentLevel >= 0 && LevelRegistry.isValid(currentLevel + 1);
+    }
+
+    public boolean hasPreviousLevel() {
+        return currentLevel >= 0 && LevelRegistry.isValid(currentLevel - 1);
+    }
+
+    /** Goes to the next level, or back to level select after the last one. */
+    public void nextLevel() {
+        if (hasNextLevel()) startLevel(currentLevel + 1);
+        else showLevelSelect();
+    }
+
+    /** Goes to the previous level; does nothing on the first level. */
+    public void previousLevel() {
+        if (hasPreviousLevel()) startLevel(currentLevel - 1);
+    }
+
+    /** Reloads the current level from scratch. */
+    public void restartLevel() {
+        if (currentLevel >= 0) startLevel(currentLevel);
+    }
+
+    private void queue(Screen next) {
+        if (pending != null) pending.dispose();   // a second request in one frame replaces the first
+        pending = next;
+    }
+
+    // ----------------------------------------------------------- lifecycle
 
     @Override
-    public void resume() {
-        applicationPaused = false;
+    public void render() {
+        if (pending != null) {
+            Screen old = getScreen();
+            setScreen(pending);   // hides the old screen, shows and resizes the new one
+            pending = null;
+            if (old != null) old.dispose();
+        }
+        super.render();
     }
 
-    /** Called when the menu replaces this screen: silence the footsteps loop. */
-    @Override
-    public void hide() {
-        if (player != null) player.stopFootsteps();
-    }
-
-    /**
-     * Centres the camera on the player as far as map bounds permit.
-     *
-     * <p>Clamping the target centre to half a viewport width/height from each
-     * edge prevents empty space outside the maze from becoming visible while
-     * still allowing normal tracking in the map interior.</p>
-     */
-    private void updateCamera() {
-        camera.position.set(
-            MathUtils.clamp(player.x + Player.W / 2, camera.viewportWidth / 2, maze.pixelWidth() - camera.viewportWidth / 2),
-            MathUtils.clamp(player.y + Player.H / 2, camera.viewportHeight / 2, maze.pixelHeight() - camera.viewportHeight / 2), 0);
-        camera.update();
-    }
-
-    /**
-     * Releases all resources owned by the application and its game objects.
-     *
-     * <p>The enemy texture is disposed once here because every
-     * {@link Enemy} shares it; enemies themselves do not own disposable
-     * resources.</p>
-     */
     @Override
     public void dispose() {
-        // A failed map load returns early from create(), so some fields can be null.
-        if (maze != null) maze.dispose();
-        if (player != null) player.dispose();
-        if (batch != null) batch.dispose();
-        if (enemyTex != null) enemyTex.dispose();
-        if (keyTexture != null) keyTexture.dispose();
-        if (hud != null) hud.dispose();
-        if (trapRenderer != null) trapRenderer.dispose();
-        if(potionTexture != null) potionTexture.dispose();
+        Screen current = getScreen();
+        super.dispose();
+        if (current != null) current.dispose();
+        if (pending != null) pending.dispose();
+        if (audio != null) audio.dispose();
     }
-
 }
