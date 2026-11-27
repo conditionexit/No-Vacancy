@@ -45,8 +45,10 @@ public class Player {
 
     private final Maze maze;
 
+    /** Four walking loops: index 0 down, 1 left, 2 right, and 3 up. */
     @SuppressWarnings("unchecked")
     private final Animation<TextureRegion>[] walk = new Animation[4];   // 0 down, 1 left, 2 right, 3 up
+    /** Walking time in seconds, reset to zero when movement keys are released. */
     private float stateTime;
     private int dir = 0;
     private boolean moving;
@@ -61,21 +63,34 @@ public class Player {
      * Creates a player linked to a maze and places it at that maze's player
      * spawn point.
      *
-     * <p>The constructor obtains the four directional animations from the
-     * map's {@code player} tileset and loads the footstep sound. The sound is
-     * subsequently owned by this player and must be released with
+     * <p>The constructor obtains four directional animations from the map's
+     * {@code rekindled} tileset and loads the footstep sound, released with
      * {@link #dispose()}.</p>
      *
-     * @param maze maze that supplies collision, spawn, tile-size, and
-     *             animation data
+     * <p>Each assignment loads one loop defined in {@code rekindled.tsx}.
+     * Tiles 3, 7, 11, and 15 contain the down, left, right, and up animation
+     * definitions. Each definition lists four frames lasting 120 milliseconds
+     * each. These tile IDs identify definitions, not the number of frames.</p>
+     *
+     * <p>The map owns the sprite textures and releases them on disposal.
+     * This player owns only its footstep sound.</p>
+     *
+     * @param maze maze that supplies collision, spawn, tile-size and animation data
      */
     public Player(Maze maze) {
         this.maze = maze;
 
-        walk[0] = maze.animation("player", 3);    // down
-        walk[1] = maze.animation("player", 7);    // left
-        walk[2] = maze.animation("player", 11);   // right
-        walk[3] = maze.animation("player", 15);   // up
+        // Old player animations, kept for reference:
+        // walk[0] = maze.animation("player", 3);    // down
+        // walk[1] = maze.animation("player", 7);    // left
+        // walk[2] = maze.animation("player", 11);   // right
+        // walk[3] = maze.animation("player", 15);   // up
+
+        // Rekindled One: each animation is defined in rekindled.tsx.
+        walk[0] = maze.animation("rekindled", 3);    // down
+        walk[1] = maze.animation("rekindled", 7);    // left
+        walk[2] = maze.animation("rekindled", 11);   // right
+        walk[3] = maze.animation("rekindled", 15);   // up
 
         stepSound = Gdx.audio.newSound(
             Gdx.files.internal("Sounds/stepSound.mp3")
@@ -177,6 +192,11 @@ public class Player {
         return new Vector2(dx, dy);
     }
 
+    /**
+     * Chooses a facing direction from the movement keys: W up, S down,
+     * A left, and D right. When several are held, that order determines
+     * which direction is displayed. Releasing them keeps the last direction.
+     */
     private void updateDirection() {
         if (Gdx.input.isKeyPressed(Input.Keys.W)) {
             dir = 3;
@@ -189,6 +209,15 @@ public class Player {
         }
     }
 
+    /**
+     * Advances the walking clock while movement input is active.
+     *
+     * <p>Releasing the movement keys resets time to zero so the first frame
+     * becomes the standing pose. This follows keyboard input; pushing against
+     * a wall can still play the walking loop.</p>
+     *
+     * @param dt elapsed time since the previous update, in seconds
+     */
     private void updateAnimation(float dt) {
         if (moving) {
             stateTime += dt;
@@ -208,6 +237,10 @@ public class Player {
     /**
      * Draws the current directional animation frame at the player's world
      * position.
+     *
+     * <p>{@code walk[dir]} selects the direction and {@code getKeyFrame}
+     * selects its picture using stateTime. Each picture lasts 0.12 seconds;
+     * after four pictures the loop repeats. W and H set the size on screen.</p>
      *
      * @param batch active sprite batch configured with the game camera's
      *              projection matrix

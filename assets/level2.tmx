@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="60" height="40" tilewidth="32" tileheight="32" infinite="0" nextlayerid="18" nextobjectid="32">
  <tileset firstgid="1" source="tileset.tsx"/>
- <tileset firstgid="25" source="player.tsx"/>
+ <tileset firstgid="25" source="rekindled.tsx"/>
  <tileset firstgid="41" source="mainlevbuild.tsx"/>
  <tileset firstgid="681" source="sidewallcorner.tsx"/>
  <tileset firstgid="682" source="cornertest3.tsx"/>
  <tileset firstgid="683" source="bit corner.tsx"/>
  <tileset firstgid="684" source="botttomcorner.tsx"/>
  <tileset firstgid="685" source="roundwallcorners.tsx"/>
+ <tileset firstgid="686" source="chirurgeons.tsx"/>
  <layer id="16" name="ground" width="60" height="40">
   <data encoding="csv">
 294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,294,

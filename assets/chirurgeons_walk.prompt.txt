@@ -1,0 +1,7 @@
+Generated with the built-in image generation tool.
+Reference: The Chirurgeons.png
+
+Prompt:
+Create a simple clean pixel art game walking sprite sheet of The Chirurgeons from the attached reference: red glowing lantern head with blue grey roof and cross-shaped finial, long cream doctor's coat, black trousers, brown gloves and boots, small gold belt buckle. Preserve this identity. Transparent background, no text, no grid lines, no shadows. EXACTLY four columns and four rows with equal cell spacing and fixed character registration. Row 1 facing down/front, row 2 facing left, row 3 facing right, row 4 facing up/back. Each row has four frames: neutral, left foot forward, neutral, right foot forward. Clear small walking steps and subtle arm and coat movement. Consistent size and aligned feet across all 16 frames. Whole body and lantern fit inside every cell with generous margins. Simple limited palette crisp pixel art, readable at 32x58 world pixels, suitable for a second year university maze game. Portrait sheet aspect ratio 1:2, requested dimensions 1024x2048, four columns and four rows. No extra characters or props.
+
+Actual output: 887 x 1774 RGBA. chirurgeons.tsx defines four rows and four columns of 208 x 434 frames with a 10-pixel margin.

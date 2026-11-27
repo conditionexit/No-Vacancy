@@ -338,6 +338,15 @@ public class Maze {
      * This assumes the source animated tile supplies at least one frame and
      * one interval, as produced by the game's tileset.</p>
      *
+     * <p>For example, {@code animation("chirurgeons", 3)} finds the named
+     * tileset and its local tile 3, whose definition lists frames 0 through 3.
+     * Adding firstGid converts that local tile ID to the map-wide tile ID.
+     * The frame pictures are collected in order and used to make a loop.</p>
+     *
+     * <p>All intervals in these walking definitions are equal (120 ms).
+     * Dividing by 1000 converts that to 0.12 seconds per picture. The returned
+     * animation shares map-owned textures; callers must not dispose them.</p>
+     *
      * @param tilesetName name of the TMX tileset containing the animated tile
      * @param localId tile identifier relative to that tileset
      * @return looping animation containing the tile's frame texture regions

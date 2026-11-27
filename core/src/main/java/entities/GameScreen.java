@@ -31,7 +31,6 @@ public class GameScreen extends ScreenAdapter {
     Maze maze;
     Player player;
     Array<Enemy> enemies = new Array<>();
-    Texture enemyTex;
     Key key;
     Texture keyTexture;
     Potion potion;
@@ -50,7 +49,17 @@ public class GameScreen extends ScreenAdapter {
         this.levelFile = levelFile;
     }
 
-    /** Loads the level and creates its game objects. */
+    /**
+     * Loads the level and creates the player, enemies, items and HUD.
+     *
+     * <p>The level references rekindled.tsx and chirurgeons.tsx. Loading the
+     * map loads their sprite sheets, allowing the player and enemies to ask
+     * the maze for named walking animations. All enemies share the map's
+     * textures but keep their own animation timers.</p>
+     *
+     * <p>Enemy spawn points are treated as sprite centres, so half the sprite
+     * width and height are subtracted to obtain bottom-left coordinates.</p>
+     */
     @Override
     public void show() {
         batch = new SpriteBatch();
@@ -79,13 +88,11 @@ public class GameScreen extends ScreenAdapter {
             potionTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         }
 
-        enemyTex = new Texture("enemy.png");
-        enemyTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        // Enemy animation textures are now loaded and disposed with the map.
         for (Vector2 s : maze.enemySpawns) {
             enemies.add(new Enemy(
                 s.x - Enemy.W / 2,
                 s.y - Enemy.H / 2,
-                enemyTex,
                 maze
             ));
         }
@@ -257,8 +264,12 @@ public class GameScreen extends ScreenAdapter {
     }
 
     /**
-     * The enemy texture is disposed once here because every {@link Enemy}
-     * shares it; enemies themselves do not own disposable resources.
+     * Releases resources created for this screen.
+     *
+     * <p>Disposing the maze releases the map-owned player and enemy sprite
+     * textures once. Individual enemies do not dispose those shared textures.
+     * The player separately releases its footstep sound. Null checks allow
+     * cleanup even if loading the map failed before setup finished.</p>
      */
     @Override
     public void dispose() {
@@ -266,7 +277,6 @@ public class GameScreen extends ScreenAdapter {
         if (maze != null) maze.dispose();
         if (player != null) player.dispose();
         if (batch != null) batch.dispose();
-        if (enemyTex != null) enemyTex.dispose();
         if (keyTexture != null) keyTexture.dispose();
         if (hud != null) hud.dispose();
         if (trapRenderer != null) trapRenderer.dispose();
