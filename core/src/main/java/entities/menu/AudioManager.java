@@ -17,7 +17,7 @@ import com.badlogic.gdx.math.MathUtils;
  */
 public final class AudioManager {
     private static final String PREFS_NAME = "no-vacancy-settings";
-    private static final String MUSIC_FILE = "Audio/Music/Bygone Halls.wav";
+    private static final String MUSIC_FILE = "Audio/Music/Amber Lament.wav";
 
     private final Preferences prefs = Gdx.app.getPreferences(PREFS_NAME);
     private float master;

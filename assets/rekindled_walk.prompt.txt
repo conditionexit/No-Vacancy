@@ -1,0 +1,8 @@
+Generated with the built-in image generation tool.
+Reference: The Rekindled One.png
+
+Prompt:
+Create a production game sprite sheet based closely on the attached Rekindled One reference. Simple clean pixel art for a second year university top-down maze game. Preserve gold glowing lantern head with slate roof, brown long coat, red sash, dark boots. EXACTLY 4 columns and 4 rows, 16 complete characters, equally spaced on uniform cells, transparent background, no text no grid no shadows. Row 1 faces down toward viewer, row 2 faces left, row 3 faces right, row 4 faces up showing back. Each row is a simple four-frame looping walk: neutral, left foot forward, neutral, right foot forward; subtle arm and coat swing. Fixed character size and registration, feet aligned in each cell. All lantern tops and boots fully inside each cell with margins. Sheet dimensions 1024 wide by 2048 high, each cell 256 wide by 512 high. Crisp limited palette pixel art with clear silhouettes, simplified detail suitable to display at 32x66 pixels. Keep lantern head proportional to reference, no face added.
+
+Actual output: 887 x 1774 RGBA. rekindled.tsx defines four rows and four columns of 221 x 443 frames.
+The unused right and bottom edge pixels are outside the character artwork.
